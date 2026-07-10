@@ -1,1 +1,262 @@
-<h1>Athlete Twin Pro</h1>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Athlete Digital Twin Pro | 458K USDA</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root{--bg:#0a0a0f;--card:#12121a;--accent:#4CAF50;--text:#e0e0e0;--muted:#888;--border:#1a1a2e;--red:#ff5252;--orange:#ff9800;--purple:#7c4dff}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,sans-serif;background:var(--bg);color:var(--text);padding-bottom:60px}
+.header{background:linear-gradient(135deg,#0a0a0f,#1a1a2e);padding:10px;text-align:center;border-bottom:2px solid var(--accent);position:sticky;top:0;z-index:100}
+.title{font-size:18px;font-weight:700;background:linear-gradient(135deg,#4CAF50,#2196F3);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.subtitle{font-size:9px;color:var(--muted)}
+.tabs{display:flex;gap:1px;padding:4px;background:var(--bg);position:sticky;top:48px;z-index:99;border-bottom:1px solid var(--border)}
+.tab{flex:1;padding:8px 1px;background:transparent;border:none;border-radius:6px;color:var(--muted);font-weight:600;cursor:pointer;font-size:9px}
+.tab.active{background:var(--accent);color:#fff}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.card{background:var(--card);border-radius:12px;padding:10px;margin:5px;border:1px solid var(--border)}
+.card-title{font-size:12px;font-weight:600;margin-bottom:6px;color:var(--accent)}
+input,select{width:100%;padding:10px;background:#0a0a0f;border:1px solid var(--border);border-radius:8px;color:#fff;font-size:13px;margin-bottom:3px;-webkit-appearance:none}
+input:focus{border-color:var(--accent);outline:none}
+.btn{width:100%;padding:10px;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:12px;margin-top:4px}
+.btn-green{background:var(--accent);color:#fff}
+.btn-red{background:var(--red);color:#fff}
+.btn-blue{background:var(--blue);color:#fff}
+.btn-purple{background:var(--purple);color:#fff}
+.hidden{display:none}
+.suggestions-box{position:fixed;top:160px;left:5px;right:5px;background:var(--card);border-radius:10px;max-height:250px;overflow-y:auto;border:1px solid var(--accent);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.8)}
+.sug-item{padding:10px;border-bottom:1px solid var(--border);cursor:pointer;font-size:11px;color:var(--text)}
+.sug-item:active{background:#1a1a2e}
+.sug-item .name{font-weight:600;color:#fff}
+.sug-item .meta{font-size:9px;color:var(--accent)}
+.diary-item{background:#0a0a0f;padding:6px 8px;border-radius:6px;margin-bottom:3px;display:flex;justify-content:space-between;align-items:center;font-size:11px}
+.diary-item .del{color:var(--red);cursor:pointer;font-weight:700;padding:2px 6px}
+.stat-row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border);font-size:11px}
+.stat-val{font-weight:600;color:var(--accent)}
+#viewer3D{width:100%;height:350px;background:#000;border-radius:10px;touch-action:manipulation}
+.slider-container{margin:4px 0}
+.slider-container label{font-size:10px;color:var(--muted);display:flex;justify-content:space-between}
+input[type=range]{width:100%;accent-color:var(--accent)}
+canvas{display:block}
+.row{display:flex;gap:4px}
+.row .btn{flex:1}
+.biomarker-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px}
+.bio-item{background:#0a0a0f;padding:6px;border-radius:6px;text-align:center;border:1px solid var(--border)}
+.bio-item .name{font-size:9px;color:var(--muted)}
+.bio-item .value{font-size:14px;font-weight:700}
+.bio-item .status{font-size:8px}
+.status-normal{color:var(--accent)}
+.status-warn{color:var(--orange)}
+.status-danger{color:var(--red)}
+</style>
+</head>
+<body>
+<div class="header"><div class="title">🧬 Athlete Digital Twin Pro</div><div class="subtitle" id="status">458 452 продукта USDA</div></div>
+<divclass="tabs">
+<button class="tab active" onclick="switchTab('eat')">🍽 Еда</button>
+<button class="tab" onclick="switchTab('bio')">🩸 Био</button>
+<button class="tab" onclick="switchTab('sim')">📊 Сим</button>
+<button class="tab" onclick="switchTab('body')">🧍 3D</button>
+</div>
+
+<div id="tab-eat" class="tab-content active">
+<div class="card"><div class="card-title">🔍 Поиск по 458 452 продуктам USDA</div>
+<input type="text" id="search" placeholder="Введите продукт..." oninput="searchFood()" autocomplete="off">
+<div id="suggestionsBox"></div></div>
+<div class="card"><div class="card-title">📋 Дневник (<span id="count">0</span>)</div>
+<div id="diary"></div><div id="totals" class="hidden">
+<div class="stat-row"><span>🥩 Белки</span><span class="stat-val" id="tp">0 г</span></div>
+<div class="stat-row"><span>🧈 Жиры</span><span class="stat-val" id="tf">0 г</span></div>
+<div class="stat-row"><span>🌾 Углеводы</span><span class="stat-val" id="tc">0 г</span></div>
+<div class="stat-row"><span>🔥 Калории</span><span class="stat-val" id="tcal">0 ккал</span></div></div>
+<button class="btn btn-red" onclick="resetDiary()">🗑 Очистить</button></div></div>
+
+<div id="tab-bio" class="tab-content">
+<div class="card"><div class="card-title">🩸 Биомаркеры</div><div class="biomarker-grid" id="bioGrid"><div style="color:#888;text-align:center;padding:15px;font-size:11px">Введите параметры во вкладке Сим</div></div></div>
+<div class="card"><div class="card-title">🧪 Гормоны</div><div class="biomarker-grid" id="hormoneGrid"></div></div></div>
+
+<div id="tab-sim" class="tab-content">
+<div class="card"><div class="card-title">👤 Параметры</div>
+<input type="number" id="w" value="80" placeholder="Вес (кг)">
+<input type="number" id="h" value="175" placeholder="Рост (см)">
+<input type="number" id="age" value="25" placeholder="Возраст">
+<select id="gender"><option value="male">Мужчина</option><option value="female">Женщина</option></select>
+<select id="activity"><option value="1.2">Сидячий</option><option value="1.55" selected>Умеренный</option><option value="1.9">Экстрим</option></select>
+<button class="btn btn-green" onclick="runSim()">🚀 Симуляция 90 дней</button></div>
+<div id="simResult" class="hidden"><div class="card"><div class="card-title">📊 Прогноз веса</div><canvas id="chart" width="340" height="180"></canvas><div id="simStats"></div></div></div></div>
+
+<div id="tab-body" class="tab-content">
+<div class="card"><div class="card-title">🧍 3D Анатомия</div>
+<div id="viewer3D"></div>
+<div class="slider-container"><label>💪 Мышцы <span id="muscleVal">45%</span></label><input type="range" id="muscleSlider" min="20" max="70" value="45" oninput="updateBody()"></div>
+<div class="slider-container"><label>🍔 Жир <span id="fatVal">20%</span></label><input type="range" id="fatSlider" min="3" max="60" value="20" oninput="updateBody()"></div>
+<div class="slider-container"><label>👁 Кожа <span id="skinVal">80%</span></label><input type="range" id="skinSlider" min="0" max="100" value="80" oninput="updateBody()"></div>
+<div class="row"><button class="btn btn-blue" onclick="toggleLayer('skin')">🟤 Кожа</button><button class="btn btn-purple" onclick="toggleLayer('muscle')">🔴 Мышцы</button><button class="btn btn-blue" onclick="toggleLayer('bone')">⚪ Скелет</button><button class="btn btn-purple" onclick="toggleLayer('organs')">❤️ Органы</button></div></div></div>
+
+<script>
+let FOOD_DB=[],DB_LOADED=false;
+const TOTAL_CHUNKS=10;
+
+async function loadChunk(i){
+  const resp=await fetch('data_chunks/chunk_'+i+'.txt');
+  const b64=await resp.text();
+  const bin=atob(b64);
+  const bytes=new Uint8Array(bin.length);
+  for(let j=0;j<bin.length;j++)bytes[j]=bin.charCodeAt(j);
+  const ds=new DecompressionStream('gzip');
+  const writer=ds.writable.getWriter();
+  const reader=ds.readable.getReader();
+  writer.write(bytes);
+  writer.close();
+  const result=await reader.read();
+  const text=new TextDecoder().decode(result.value);
+  const raw=JSON.parse(text);
+  return raw.map(r=>({name:r[0],cal:r[1][0],pro:r[1][1],fat:r[1][2],car:r[1][3]}));
+}
+
+async function loadAll(){
+  document.getElementById('status').textContent='Загрузка базы USDA...';
+  let all=[];
+  for(let i=0;i<TOTAL_CHUNKS;i++){
+    const foods=await loadChunk(i);
+    all=all.concat(foods);
+    document.getElementById('status').textContent='Загружено '+all.length+' продуктов...';
+  }
+  FOOD_DB=all;
+  DB_LOADED=true;
+  document.getElementById('status').textContent='✅ '+all.length+' продуктов USDA';
+}
+loadAll();
+
+let searchTimeout;
+function searchFood(){
+  clearTimeout(searchTimeout);
+  searchTimeout=setTimeout(()=>{
+    const q=document.getElementById('search').value.toLowerCase().trim();
+    const box=document.getElementById('suggestionsBox');
+    if(!q){box.innerHTML='';return}
+    if(!DB_LOADED){box.innerHTML='<div style="color:#888;text-align:center;padding:15px;">⏳ База загружается...</div>';return}
+    const r=FOOD_DB.filter(f=>f.name.toLowerCase().includes(q)).slice(0,20);
+    if(!r.length){box.innerHTML='<div style="color:#888;text-align:center;padding:15px;">Ничего не найдено</div>';return}
+    box.innerHTML=r.map(f=>`<div class="sug-item" onclick="addFood('${f.name.replace(/'/g,"\'")}')"><div class="name">${f.name}</div><div class="meta">🔥${f.cal}ккал | 🥩${f.pro}г | 🧈${f.fat}г | 🌾${f.car}г</div></div>`).join('');
+  },100);
+}
+
+document.addEventListener('click',function(e){if(!e.target.closest('#search')&&!e.target.closest('#suggestionsBox'))document.getElementById('suggestionsBox').innerHTML='';});
+
+let diary=[];
+function addFood(name){
+  const f=FOOD_DB.find(x=>x.name===name);
+  if(!f)return;
+  const g=parseFloat(prompt('Сколько грамм "'+f.name+'"?','100'));
+  if(!g||g<=0)return;
+  const r=g/100;
+  diary.push({name:f.name,grams:g,cal:Math.round(f.cal*r),pro:Math.round(f.pro*r*10)/10,fat:Math.round(f.fat*r*10)/10,car:Math.round(f.car*r*10)/10});
+  document.getElementById('search').value='';
+  document.getElementById('suggestionsBox').innerHTML='';
+  updateDiary();saveDiary();
+}
+function updateDiary(){
+  const d=document.getElementById('diary'),t=document.getElementById('totals');
+  document.getElementById('count').textContent=diary.length;
+  if(!diary.length){d.innerHTML='<div style="color:#888;text-align:center;padding:15px;">Дневник пуст</div>';t.classList.add('hidden');return}
+  t.classList.remove('hidden');
+  d.innerHTML=diary.map((item,i)=>`<div class="diary-item"><span>${item.name}</span><span>${item.grams}г | ${item.cal}ккал</span><span class="del" onclick="removeFood(${i})">✕</span></div>`).join('');
+  let tp=0,tf=0,tc=0,tcal=0;
+  diary.forEach(x=>{tp+=x.pro;tf+=x.fat;tc+=x.car;tcal+=x.cal});
+  document.getElementById('tp').textContent=Math.round(tp)+' г';
+  document.getElementById('tf').textContent=Math.round(tf)+' г';
+  document.getElementById('tc').textContent=Math.round(tc)+' г';
+  document.getElementById('tcal').textContent=Math.round(tcal)+' ккал';
+}
+function removeFood(i){diary.splice(i,1);updateDiary();saveDiary()}
+function resetDiary(){if(confirm('Очистить?')){diary=[];updateDiary();saveDiary()}}
+function saveDiary(){localStorage.setItem('ad_diary',JSON.stringify(diary))}
+document.addEventListener('DOMContentLoaded',()=>{const s=localStorage.getItem('ad_diary');if(s){diary=JSON.parse(s);updateDiary()}});
+
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(d=>d.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  event.target.classList.add('active');
+  if(t==='body')setTimeout(init3D,100);
+}
+
+function runSim(){
+  const w=parseFloat(document.getElementById('w').value)||80;
+  const h=parseFloat(document.getElementById('h').value)||175;
+  const age=parseInt(document.getElementById('age').value)||25;
+  const gender=document.getElementById('gender').value;
+  const act=parseFloat(document.getElementById('activity').value)||1.55;
+  let bmr=gender==='male'?10*w+6.25*h-5*age+5:10*w+6.25*h-5*age-161;
+  const tdee=bmr*act;
+  let tcal=0;diary.forEach(x=>tcal+=x.cal||0);
+  const days=90;let weight=w;const pts=[];
+  for(let d=0;d<days;d++){weight+=(tcal-tdee)/7700;weight=Math.max(w*0.7,Math.min(w*1.3,weight));pts.push({day:d+1,weight})}
+  const canvas=document.getElementById('chart'),ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,340,180);ctx.fillStyle='#0a0a0f';ctx.fillRect(0,0,340,180);
+  const maxW=Math.max(...pts.map(p=>p.weight))*1.05,minW=Math.min(...pts.map(p=>p.weight))*0.95;
+  ctx.strokeStyle='#4CAF50';ctx.lineWidth=3;ctx.beginPath();
+  pts.forEach((p,i)=>{const x=20+300*i/(pts.length-1),y=160-140*(p.weight-minW)/(maxW-minW);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y)});ctx.stroke();
+  const last=pts[pts.length-1];
+  document.getElementById('simStats').innerHTML=`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px"><span>Вес через ${days} дн.</span><span style="color:#4CAF50;font-weight:600">${last.weight.toFixed(1)} кг</span></div><div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px"><span>Δ</span><span style="color:${last.weight>w?'#4CAF50':'#ff5252'}">${(last.weight-w)>0?'+':''}${(last.weight-w).toFixed(1)} кг</span></div>`;
+  document.getElementById('simResult').classList.remove('hidden');
+}
+
+let scene,camera,renderer,humanMesh,currentLayer='all';
+function init3D(){
+  if(scene)return;
+  const c=document.getElementById('viewer3D'),w=c.offsetWidth,h=c.offsetHeight;
+  scene=new THREE.Scene();scene.background=new THREE.Color(0x0a0a0f);
+  camera=new THREE.PerspectiveCamera(45,w/h,0.1,100);camera.position.set(0,1.5,5);camera.lookAt(0,0.3,0);
+  renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(w,h);c.appendChild(renderer.domElement);
+  scene.add(new THREE.AmbientLight(0x444455,0.7));
+  scene.add(new THREE.DirectionalLight(0xffffff,1)).position.set(3,5,3);
+  createHuman();animate3D();
+}
+function createHuman(){
+  humanMesh=new THREE.Group();
+  const bm=new THREE.MeshPhongMaterial({color:0xeeeedd});
+  const mm=new THREE.MeshPhongMaterial({color:0xcc3333,transparent:true,opacity:0.7});
+  const fm=new THREE.MeshPhongMaterial({color:0xffdd88,transparent:true,opacity:0.35});
+  const sm=new THREE.MeshPhongMaterial({color:0xffcc99,transparent:true,opacity:0.85});
+
+  const skull=new THREE.Mesh(new THREE.SphereGeometry(0.28,24,24),bm);skull.position.y=1.35;skull.name='bone';humanMesh.add(skull);
+  for(let i=0;i<7;i++){const rib=new THREE.Mesh(new THREE.TorusGeometry(0.45-i*0.02,0.03,8,10,Math.PI),bm);rib.position.y=0.6-i*0.11;rib.rotation.z=Math.PI/2;rib.name='bone';humanMesh.add(rib)}
+  for(let s of[-1,1]){const ab=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.06,0.8,8),bm);ab.position.set(s*0.55,0.4,0);ab.name='bone';humanMesh.add(ab);const lb=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.08,1.2,8),bm);lb.position.set(s*0.2,-0.9,0);lb.name='bone';humanMesh.add(lb)}
+
+  const tm=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.4,1.6,20),mm);tm.position.y=0.15;tm.name='muscle';humanMesh.add(tm);
+  for(let s of[-1,1]){const am=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.11,0.8,10),mm);am.position.set(s*0.6,0.2,0);am.name='muscle';humanMesh.add(am);const lm=new THREE.Mesh(new THREE.CylinderGeometry(0.14,0.16,1.2,10),mm);lm.position.set(s*0.22,-1.1,0);lm.name='muscle';humanMesh.add(lm)}
+
+  const belly=new THREE.Mesh(new THREE.SphereGeometry(0.3,16,12),fm);belly.position.set(0,0.1,0.1);belly.scale.set(1,0.8,0.6);belly.name='fat';humanMesh.add(belly);
+
+  const bodySkin=new THREE.Mesh(new THREE.CylinderGeometry(0.52,0.45,1.7,26),sm);bodySkin.position.y=0.15;bodySkin.name='skin';humanMesh.add(bodySkin);
+  const headSkin=new THREE.Mesh(new THREE.SphereGeometry(0.29,26,26),sm);headSkin.position.y=1.35;headSkin.name='skin';humanMesh.add(headSkin);
+  for(let s of[-1,1]){const a=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.11,1,14),sm);a.position.set(s*0.6,0.2,0);a.name='skin';humanMesh.add(a);const l=new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.17,1.35,14),sm);l.position.set(s*0.22,-1.15,0);l.name='skin';humanMesh.add(l)}
+
+  const heart=new THREE.Mesh(new THREE.SphereGeometry(0.1,10,10),new THREE.MeshPhongMaterial({color:0xff0000,emissive:0x330000}));heart.position.set(0.1,0.5,0.22);heart.name='organ';humanMesh.add(heart);
+  scene.add(humanMesh);
+}
+function animate3D(){requestAnimationFrame(animate3D);if(humanMesh)humanMesh.rotation.y+=0.003;if(renderer)renderer.render(scene,camera)}
+function updateBody(){
+  const m=parseInt(document.getElementById('muscleSlider').value);
+  const f=parseInt(document.getElementById('fatSlider').value);
+  const s=parseInt(document.getElementById('skinSlider').value)/100;
+  document.getElementById('muscleVal').textContent=m+'%';
+  document.getElementById('fatVal').textContent=f+'%';
+  document.getElementById('skinVal').textContent=Math.round(s*100)+'%';
+  if(humanMesh)humanMesh.children.forEach(c=>{
+    if(c.name==='muscle'){const sc=1+(m-45)*0.01;c.scale.set(sc,sc,sc);c.material.opacity=currentLayer==='muscle'||currentLayer==='all'?0.5+(m-20)*0.015:0}
+    if(c.name==='fat'){const sc=1+(f-20)*0.012;c.scale.set(sc,sc,sc);c.material.opacity=currentLayer==='fat'||currentLayer==='all'?0.2+(f-3)*0.01:0}
+    if(c.name==='skin')c.material.opacity=currentLayer==='skin'||currentLayer==='all'?s:0.1;
+    if(c.name==='bone')c.material.opacity=currentLayer==='bone'||currentLayer==='all'?1:0.1;
+    if(c.name==='organ')c.material.opacity=currentLayer==='organs'||currentLayer==='all'?1:0;
+  });
+}
+function toggleLayer(l){currentLayer=currentLayer===l?'all':l;updateBody()}
+</script>
+</body>
+</html>
