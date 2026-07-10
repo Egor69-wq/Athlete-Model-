@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Athlete Twin Pro</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+/* ===== ВСЕ СТИЛИ ЗДЕСЬ ===== */
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,sans-serif;background:#0a0a0f;color:#e0e0e0;padding-bottom:80px}
+.header{background:linear-gradient(135deg,#0a0a0f,#1a1a2e);padding:16px;text-align:center;border-bottom:2px solid #4CAF50}
+.title{font-size:22px;font-weight:700;background:linear-gradient(135deg,#4CAF50,#2196F3);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.subtitle{font-size:11px;color:#666}
+.tabs{display:flex;gap:4px;padding:8px;background:#12121a;position:sticky;top:0;z-index:100}
+.tab{flex:1;padding:10px;background:transparent;border:none;border-radius:8px;color:#888;font-weight:600;cursor:pointer;transition:all 0.3s;font-size:13px}
+.tab.active{background:#4CAF50;color:#fff}
+.card{background:#12121a;border-radius:14px;padding:16px;margin:8px;border:1px solid #1a1a2e}
+.card-title{font-size:14px;font-weight:600;margin-bottom:10px;color:#4CAF50}
+input,select{width:100%;padding:12px;background:#0a0a0f;border:1px solid #1a1a2e;border-radius:10px;color:#fff;font-size:14px;margin-bottom:6px}
+input:focus{border-color:#4CAF50;outline:none}
+.btn{width:100%;padding:12px;border:none;border-radius:10px;font-weight:600;cursor:pointer;transition:all 0.2s}
+.btn:active{transform:scale(0.97)}
+.btn-green{background:#4CAF50;color:#fff}
+.btn-blue{background:#2196F3;color:#fff}
+.btn-red{background:#ff5252;color:#fff}
+.btn-purple{background:#7c4dff;color:#fff}
+.hidden{display:none}
+.food-item{background:#0a0a0f;padding:10px;border-radius:8px;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;border-left:3px solid #4CAF50;cursor:pointer}
+.food-item:hover{background:#1a1a2e}
+.food-item .info{flex:1}
+.food-item .name{font-weight:500;font-size:14px}
+.food-item .meta{font-size:11px;color:#888}
+.food-item .add{background:#4CAF50;color:#fff;border:none;padding:4px 12px;border-radius:6px;cursor:pointer;font-weight:600}
+.suggestions{position:sticky;top:60px;z-index:50;background:#12121a;border-radius:10px;max-height:300px;overflow-y:auto;border:1px solid #1a1a2e}
+.suggestion-item{padding:10px;border-bottom:1px solid #1a1a2e;cursor:pointer}
+.suggestion-item:hover{background:#1a1a2e}
+.suggestion-item .name{font-weight:500}
+.suggestion-item .meta{font-size:11px;color:#888}
+.diary-item{background:#0a0a0f;padding:8px 12px;border-radius:8px;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center}
+.diary-item .name{font-weight:500;font-size:13px}
+.diary-item .meta{font-size:11px;color:#888}
+.diary-item .del{color:#ff5252;cursor:pointer;font-weight:600;padding:0 8px}
+.stat-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1a1a2e}
+.stat-val{font-weight:600;color:#4CAF50}
+#viewer3D{width:100%;height:400px;background:#0a0a0f;border-radius:12px;touch-action:manipulation}
+.slider-container{margin:8px 0}
+.slider-container label{font-size:11px;color:#888;display:flex;justify-content:space-between}
+.slider-container input[type=range]{width:100%;margin:4px 0;accent-color:#4CAF50}
+canvas{display:block;width:100%!important;height:auto!important}
+.loading{text-align:center;padding:30px;color:#888}
+</style>
+</head>
+<body>
+
+<div class="header">
+<div class="title">Athlete Twin Pro</div>
+<div class="subtitle" id="status">Загрузка базы...</div>
+</div>
+
+<div class="tabs">
+<button class="tab active" onclick="switchTab('eat')">Еда</button>
+<button class="tab" onclick="switchTab('sim')">Симуляция</button>
+<button class="tab" onclick="switchTab('body')">3D Тело</button>
+</div>
+
+<!-- ВКЛАДКА ЕДА -->
+<div id="tab-eat">
+<div class="card">
+<div class="card-title">Поиск продуктов</div>ите вводить название..." oninput="searchFood()" autocomplete="off">
+<div id="suggestions" class="suggestions hidden"></div>
+</div>
+<div class="card">
+<div class="card-title">Дневник (<span id="count">0</span>)</div>
+<div id="diary"></div>
+<div id="totals" class="hidden">
+<div class="stat-row"><span>Белок</span><span class="stat-val" id="tp">0 г</span></div>
+<div class="stat-row"><span>Жиры</span><span class="stat-val" id="tf">0 г</span></div>
+<div class="stat-row"><span>Углеводы</span><span class="stat-val" id="tc">0 г</span></div>
+<div class="stat-row"><span>Калории</span><span class="stat-val" id="tcal">0 ккал</span></div>
+</div>
+<button class="btn btn-red" onclick="resetDiary()">Сбросить дневник</button>
+</div>
+</div>
+
+<!-- ВКЛАДКА СИМУЛЯЦИЯ -->
+<div id="tab-sim" class="hidden">
+<div class="card">
+<div class="card-title">Параметры тела</div>
+<input type="number" id="w" value="80" placeholder="Вес (кг)">
+<input type="number" id="h" value="175" placeholder="Рост (см)">
+<input type="number" id="age" value="25" placeholder="Возраст">
+<select id="gender"><option value="male">Мужчина</option><option value="female">Женщина</option></select>
+<button class="btn btn-green" onclick="runSim()">Запустить симуляцию</button>
+</div>
+<div id="simResult" class="hidden">
+<div class="card">
+<div class="card-title">Динамика веса</div>
+<canvas id="chart" width="350" height="200"></canvas>
+<div id="simStats"></div>
+</div>
+</div>
+</div>
+
+<!-- ВКЛАДКА 3D ТЕЛО -->
+<div id="tab-body" class="hidden">
+<div class="card">
+<div class="card-title">3D Модель</div>
+<div id="viewer3D"></div>
+<div class="slider-container">
+<label>Мышцы <span id="muscleVal">45%</span></label>
+<input type="range" id="muscleSlider" min="30" max="60" value="45" oninput="updateBody()">
+</div>
+<div class="slider-container">
+<label>Жир <span id="fatVal">20%</span></label>
+<input type="range" id="fatSlider" min="3" max="50" value="20" oninput="updateBody()">
+</div>
+<div class="slider-container">
+<label>Прозрачность <span id="skinVal">100%</span></label>
+<input type="range" id="skinSlider" min="0" max="100" value="100" oninput="updateBody()">
+</div>
+<div class="row" style="display:flex;gap:8px">
+<button class="btn btn-blue" onclick="showLayer('skin')">Кожа</button>
+<button class="btn btn-purple" onclick="showLayer('muscle')">Мышцы</button>
+<button class="btn btn-blue" onclick="showLayer('bone')">Кости</button>
+</div>
+</div>
+</div>
+
+<script>
+// ============================================
+// БАЗА ПРОДУКТОВ
+// ============================================
+
+const FOOD_DB = [
+    {id:1,name:"Куриная грудка вареная",cat:"Мясо",cal:165,pro:31,fat:3.6,car:0},
+    {id:2,name:"Куриное бедро",cat:"Мясо",cal:209,pro:26,fat:11,car:0},
+    {id:3,name:"Говядина постная",cat:"Мясо",cal:250,pro:26,fat:15,car:0},
+    {id:4,name:"Свинина постная",cat:"Мясо",cal:242,pro:27,fat:14,car:0},
+    {id:5,name:"Индейка филе",cat:"Мясо",cal:189,pro:29,fat:7,car:0},
+    {id:6,name:"Лосось",cat:"Рыба",cal:208,pro:20,fat:13,car:0},
+    {id:7,name:"Тунец",cat:"Рыба",cal:116,pro:25,fat:1.5,car:0},
+    {id:8,name:"Форель",cat:"Рыба",cal:148,pro:21,fat:7,car:0},
+    {id:9,name:"Креветки",cat:"Рыба",cal:99,pro:24,fat:0.5,car:0},
+    {id:10,name:"Яйцо куриное",cat:"Молочка",cal:155,pro:13,fat:11,car:1.1},
+    {id:11,name:"Молоко 3.2%",cat:"Молочка",cal:61,pro:3.2,fat:3.2,car:4.8},
+    {id:12,name:"Кефир 3.2%",cat:"Молочка",cal:59,pro:3.2,fat:3.2,car:4.2},
+    {id:13,name:"Творог 5%",cat:"Молочка",cal:121,pro:17,fat:5,car:2.5},
+    {id:14,name:"Творог обезжиренный",cat:"Молочка",cal:71,pro:16,fat:0.5,car:1.5},
+    {id:15,name:"Сыр Российский",cat:"Молочка",cal:363,pro:24,fat:29,car:0.5},
+    {id:16,name:"Гречка отварная",cat:"Крупы",cal:110,pro:4.2,fat:1,car:21},
+    {id:17,name:"Рис белый отварной",cat:"Крупы",cal:116,pro:2.4,fat:0.3,car:25},
+    {id:18,name:"Овсянка на воде",cat:"Крупы",cal:68,pro:2.4,fat:1.4,car:12},
+    {id:19,name:"Макароны отварные",cat:"Хлеб",cal:131,pro:4.5,fat:0.8,car:27},
+    {id:20,name:"Хлеб белый",cat:"Хлеб",cal:265,pro:8,fat:3,car:49},
+    {id:21,name:"Хлеб ржаной",cat:"Хлеб",cal:201,pro:6.5,fat:1.2,car:40},
+    {id:22,name:"Картофель вареный",cat:"Овощи",cal:77,pro:2,fat:0,car:17},
+    {id:23,name:"Брокколи вареная",cat:"Овощи",cal:35,pro:2.4,fat:0.4,car:7},
+    {id:24,name:"Морковь сырая",cat:"Овощи",cal:41,pro:0.9,fat:0.2,car:10},
+    {id:25,name:"Помидор",cat:"Овощи",cal:18,pro:0.9,fat:0.2,car:3.9},
+    {id:26,name:"Огурец",cat:"Овощи",cal:15,pro:0.7,fat:0.1,car:3.6},
+    {id:27,name:"Яблоко",cat:"Фрукты",cal:52,pro:0.3,fat:0.2,car:14},
+    {id:28,name:"Банан",cat:"Фрукты",cal:89,pro:1.1,fat:0.3,car:23},
+    {id:29,name:"Апельсин",cat:"Фрукты",cal:47,pro:0.9,fat:0.1,car:12},
+    {id:30,name:"Клубника",cat:"Фрукты",cal:32,pro:0.7,fat:0.3,car:7.7},
+    {id:31,name:"Авокадо",cat:"Овощи",cal:160,pro:2,fat:15,car:9},
+    {id:32,name:"Миндаль",cat:"Орехи",cal:579,pro:21,fat:50,car:20},
+    {id:33,name:"Грецкий орех",cat:"Орехи",cal:654,pro:15,fat:65,car:14},
+    {id:34,name:"Фасоль красная",cat:"Бобовые",cal:330,pro:24,fat:1.5,car:60},
+    {id:35,name:"Чечевица",cat:"Бобовые",cal:348,pro:26,fat:2,car:60},
+    {id:36,name:"Шоколад темный",cat:"Сладости",cal:546,pro:5,fat:34,car:57},
+    {id:37,name:"Мед",cat:"Сладости",cal:304,pro:0.3,fat:0,car:82},
+];
+
+document.getElementById('status').textContent = 'Загружено ' + FOOD_DB.length + ' продуктов';
+
+// ============================================
+// ВСЕ ФУНКЦИИ
+// ============================================
+
+let diary = [];
+let scene,camera,renderer,humanMesh;
+
+function searchFood() {
+    const query = document.getElementById('search').value.toLowerCase().trim();
+    const suggestions = document.getElementById('suggestions');
+    if (!query) { suggestions.classList.add('hidden'); return; }
+    const results = FOOD_DB.filter(item => item.name.toLowerCase().includes(query) || item.cat.toLowerCase().includes(query)).slice(0, 15);
+    if (!results.length) {
+        suggestions.innerHTML = '<div style="padding:10px;color:#666;">Ничего не найдено</div>';
+        suggestions.classList.remove('hidden');
+        return;
+    }
+    suggestions.innerHTML = results.map(item => `
+        <div class="suggestion-item" onclick="addToDiary(${item.id})">
+            <div class="name">${item.name}</div>
+            <div class="meta">${item.cat} | ${item.cal} ккал | Б:${item.pro} Ж:${item.fat} У:${item.car}</div>
+        </div>
+    `).join('');
+    suggestions.classList.remove('hidden');
+}
+
+function addToDiary(id) {
+    const product = FOOD_DB.find(p => p.id === id);
+    if (!product) return;
+    const grams = prompt('Сколько грамм "' + product.name + '"?', '100');
+    if (!grams) return;
+    const g = parseFloat(grams);
+    if (isNaN(g) || g <= 0) return;
+    const ratio = g / 100;
+    diary.push({
+        id: product.id,
+        name: product.name,
+        grams: g,
+        cal: Math.round(product.cal * ratio * 10) / 10,
+        pro: Math.round(product.pro * ratio * 10) / 10,
+        fat: Math.round(product.fat * ratio * 10) / 10,
+        car: Math.round(product.car * ratio * 10) / 10
+    });
+    document.getElementById('suggestions').classList.add('hidden');
+    document.getElementById('search').value = '';
+    updateDiary();
+    saveDiary();
+}
+
+function updateDiary() {
+    const d = document.getElementById('diary');
+    const t = document.getElementById('totals');
+    document.getElementById('count').textContent = diary.length;
+    if (!diary.length) {
+        d.innerHTML = '<div style="color:#888;text-align:center;padding:20px;">Дневник пуст</div>';
+        t.classList.add('hidden');
+        return;
+    }
+    t.classList.remove('hidden');
+    d.innerHTML = diary.map((item, i) => `
+        <div class="diary-item">
+            <span class="name">${item.name}</span>
+            <span class="meta">${item.grams}г | ${item.cal} ккал</span>
+            <span class="del" onclick="removeFromDiary(${i})">✕</span>
+        </div>
+    `).join('');
+    let tp=0,tf=0,tc=0,tcal=0;
+    diary.forEach(item => {
+        tp += item.pro || 0;
+        tf += item.fat || 0;
+        tc += item.car || 0;
+        tcal += item.cal || 0;
+    });
+    document.getElementById('tp').textContent = Math.round(tp) + ' г';
+    document.getElementById('tf').textContent = Math.round(tf) + ' г';
+    document.getElementById('tc').textContent = Math.round(tc) + ' г';
+    document.getElementById('tcal').textContent = Math.round(tcal) + ' ккал';
+}
+
+function removeFromDiary(i) {
+    diary.splice(i, 1);
+    updateDiary();
+    saveDiary();
+}
+
+function resetDiary() {
+    if (!confirm('Удалить весь дневник?')) return;
+    diary = [];
+    updateDiary();
+    saveDiary();
+}
+
+function saveDiary() {
+    localStorage.setItem('athlete_diary', JSON.stringify(diary));
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const saved = localStorage.getItem('athlete_diary');
+    if (saved) {
+        try {
+            diary = JSON.parse(saved);
+            updateDiary();
+        } catch(e) {}
+    }
+});
+
+function switchTab(t) {
+    document.querySelectorAll('.tab').forEach(function(b) { b.classList.remove('active'); });
+    document.querySelectorAll('[id^="tab-"]').forEach(function(d) { d.classList.add('hidden'); });
+    document.getElementById('tab-' + t).classList.remove('hidden');
+    event.target.classList.add('active');
+    if (t === 'body') setTimeout(init3D, 100);
+}
+
+function runSim() {
+    const w = parseFloat(document.getElementById('w').value) || 80;
+    const h = parseFloat(document.getElementById('h').value) || 175;
+    const age = parseInt(document.getElementById('age').value) || 25;
+    const gender = document.getElementById('gender').value;
+    let bmr = gender === 'male' ? 10*w + 6.25*h - 5*age + 5 : 10*w + 6.25*h - 5*age - 161;
+    const tdee = bmr * 1.55;
+    let tcal = 0;
+    diary.forEach(function(item) { tcal += item.cal || 0; });
+    const days = 30;
+    let weight = w;
+    const points = [];
+    for (let d = 0; d < days; d++) {
+        const deficit = tcal - tdee;
+        weight += deficit / 7700;
+        weight = Math.max(w * 0.7, Math.min(w * 1.3, weight));
+        points.push({day: d + 1, weight: weight});
+    }
+    const canvas = document.getElementById('chart');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, 350, 200);
+    ctx.fillStyle = '#0a0a0f';
+    ctx.fillRect(0, 0, 350, 200);
+    const maxW = Math.max.apply(null, points.map(function(p) { return p.weight; })) * 1.05;
+    const minW = Math.min.apply(null, points.map(function(p) { return p.weight; })) * 0.95;
+    ctx.strokeStyle = '#4CAF50';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    points.forEach(function(p, i) {
+        const x = 20 + 310 * i / (points.length - 1);
+        const y = 180 - 160 * (p.weight - minW) / (maxW - minW);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    const last = points[points.length - 1];
+    document.getElementById('simStats').innerHTML = 
+        '<div style="display:flex;justify-content:space-between;padding:4px 0"><span>Вес через ' + days + ' дней</span><span style="color:#4CAF50;font-weight:600">' + last.weight.toFixed(1) + ' кг</span></div>' +
+        '<div style="display:flex;justify-content:space-between;padding:4px 0"><span>Изменение</span><span style="color:' + (last.weight > w ? '#4CAF50' : '#ff5252') + ';font-weight:600">' + ((last.weight - w) > 0 ? '+' : '') + (last.weight - w).toFixed(1) + ' кг</span></div>';
+    document.getElementById('simResult').classList.remove('hidden');
+}
+
+function init3D() {
+    if (scene) return;
+    const container = document.getElementById('viewer3D');
+    const w = container.offsetWidth;
+    const h = container.offsetHeight;
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a0a0f);
+    camera = new THREE.PerspectiveCamera(45, w/h, 0.1, 100);
+    camera.position.set(0, 1.5, 5);
+    camera.lookAt(0, 0.5, 0);
+    renderer = new THREE.WebGLRenderer({antialias: true});
+    renderer.setSize(w, h);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    container.appendChild(renderer.domElement);
+    const light = new THREE.DirectionalLight(0xffffff, 1);
+    light.position.set(3, 5, 3);
+    scene.add(light);
+    const ambient = new THREE.AmbientLight(0x333344, 0.5);
+    scene.add(ambient);
+    createHuman();
+    animate3D();
+}
+
+function createHuman() {
+    humanMesh = new THREE.Group();
+    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.5, 1.8, 16), new THREE.MeshPhongMaterial({color: 0x4CAF50, transparent: true, opacity: 0.3}));
+    torso.position.y = 0.2;
+    humanMesh.add(torso);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 16), new THREE.MeshPhongMaterial({color: 0xffcc99}));
+    head.position.y = 1.3;
+    humanMesh.add(head);
+    for (var side = -1; side <= 1; side += 2) {
+        const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.15, 1.2, 8), new THREE.MeshPhongMaterial({color: 0x4CAF50, transparent: true, opacity: 0.3}));
+        arm.position.set(side * 0.7, 0.3, 0);
+        humanMesh.add(arm);
+    }
+    for (var side2 = -1; side2 <= 1; side2 += 2) {
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.18, 1.6, 8), new THREE.MeshPhongMaterial({color: 0x4CAF50, transparent: true, opacity: 0.3}));
+        leg.position.set(side2 * 0.25, -1.2, 0);
+        humanMesh.add(leg);
+    }
+    scene.add(humanMesh);
+}
+
+function animate3D() {
+    requestAnimationFrame(animate3D);
+    if (humanMesh) { humanMesh.rotation.y += 0.005; }
+    if (renderer && scene && camera) { renderer.render(scene, camera); }
+}
+
+function updateBody() {
+    var muscle = parseInt(document.getElementById('muscleSlider').value);
+    var fat = parseInt(document.getElementById('fatSlider').value);
+    var skin = parseInt(document.getElementById('skinSlider').value);
+    document.getElementById('muscleVal').textContent = muscle + '%';
+    document.getElementById('fatVal').textContent = fat + '%';
+    document.getElementById('skinVal').textContent = skin + '%';
+    if (humanMesh) {
+        var scale = 1 + (muscle - 45) * 0.005 + (fat - 20) * 0.003;
+        humanMesh.scale.set(scale, 1 + (fat - 20) * 0.005, scale);
+    }
+}
+
+function showLayer(layer) {
+    alert('Показан слой: ' + layer);
+}
+</script>
+</body>
+</html>
+<input type="text" id="search" placeholder="Начн
