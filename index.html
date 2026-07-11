@@ -11,15 +11,22 @@
 <input type="text" id="search" placeholder="Поиск..." oninput="searchFood()">
 <div id="box"></div>
 <div id="diary"></div>
+<script src="chunk_0.txt"></script>
+<script src="chunk_1.txt"></script>
+<script src="chunk_2.txt"></script>
+<script src="chunk_3.txt"></script>
+<script src="chunk_4.txt"></script>
+<script src="chunk_5.txt"></script>
+<script src="chunk_6.txt"></script>
+<script src="chunk_7.txt"></script>
+<script src="chunk_8.txt"></script>
+<script src="chunk_9.txt"></script>
 <script>
 var DB=[],loaded=false;
 async function init(){
 for(var i=0;i<10;i++){
-var url="chunk_"+i+".txt";
-var r=await fetch(url);
-var t=await r.text();
-t=t.split('"')[1];
-var bin=atob(t);
+var b64=window['USDA_CHUNK_'+i];
+var bin=atob(b64);
 var bytes=new Uint8Array(bin.length);
 for(var j=0;j<bin.length;j++)bytes[j]=bin.charCodeAt(j);
 var ds=new DecompressionStream("gzip");
