@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Athlete Twin Pro</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root{--bg:#0a0a0f;--card:#12121a;--accent:#4CAF50}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,sans-serif;background:var(--bg);color:#e0e0e0;padding:10px}
+h2{text-align:center;padding:10px}
+input{padding:12px;background:#0a0a0f;border:1px solid #1a1a2e;border-radius:10px;color:#fff;font-size:14px;width:100%;margin:8px 0}
+input:focus{border-color:var(--accent);outline:none}
+.card{background:var(--card);border-radius:12px;padding:12px;margin:8px 0}
+.btn{padding:12px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-weight:600;width:100%;margin:4px 0;cursor:pointer}
+.status{font-size:11px;color:#888;text-align:center}
+.sug{cursor:pointer;padding:10px;border-bottom:1px solid #1a1a2e;font-size:13px}
+.sug:hover{background:#1a1a2e}
+.bar{height:6px;background:#1a1a2e;border-radius:3px;margin:3px 0;overflow:hidden}
+.fill{height:100%;border-radius:3px}
+.green{background:#4CAF50}.yellow{background:#ff9800}.red{background:#ff5252}
+#viewer3D{width:100%;height:350px;background:#000;border-radius:10px;margin:6px 0}
+</style>
+</head>
+<body>
+<h2>🧬 Athlete Twin Pro</h2>
+<p class="status" id="status">Загрузка...</p>
+<input type="text" id="search" placeholder="🔍 Поиск..." oninput="searchFood()" autocomplete="off">
+<div id="box"></div>
+<div class="card"><b>📋 Дневник (<span id="count">0</span>)</b>
+<div id="diary"></div>
+<div id="totals" style="display:none">
+<div>🥩 Белки: <b id="tp">0 г</b></div><div class="bar"><div id="barPro" class="fill green" style="width:0%"></div></div>
+<div>🧈 Жиры: <b id="tf">0 г</b></div><div class="bar"><div id="barFat" class="fill green" style="width:0%"></div></div>
+<div>🌾 Углеводы: <b id="tc">0 г</b></div><div class="bar"><div id="barCar" class="fill green" style="width:0%"></div></div>
+<div>🔥 Калории: <b id="tcal">0 ккал</b></div>
+</div>
+<button class="btn" onclick="resetDiary()">🗑 Очистить</button>
+</div>
+<div class="card"><b>🧍 3D</b>
+<div id="viewer3D"></div>
+<button class="btn" onclick="init3D()">Показать 3D</button>
+</div>
+<script>var DB=[],NORMS={pro:120,fat:70,car:300};
+async function loadChunk(i){
+var r=await fetch("data_chunks/chunk_"+i+".txt");
+var t=await r.text();
+t=t.split('"')[1];
+var bin=atob(t);
+var bytes=new Uint8Array(bin.length);
+for(var j=0;j<bin.length;j++)bytes[j]=bin.charCodeAt(j);
+var ds=new DecompressionStream("gzip");
+var w=ds.writable.getWriter();w.write(bytes);w.close();
+var result=await ds.readable.getReader().read();
+var raw=JSON.parse(new TextDecoder().decode(result.value));
+return raw.map(function(r){return{name:r[0],cal:r[1][0],pro:r[1][1],fat:r[1][2],car:r[1][3]};});
+}
+async function loadAll(){
+for(var i=0;i<10;i++){
+var foods=await loadChunk(i);DB=DB.concat(foods);
+document.getElementById("status").textContent="Загружено "+DB.length+" продуктов...";
+}
+document.getElementById("status").textContent="✅ "+DB.length+" USDA";
+}
+loadAll();
+function searchFood(){
+var q=document.getElementById("search").value.toLowerCase().trim();
+var box=document.getElementById("box");
+if(!q||!DB.length){box.innerHTML="";return;}
+var r=DB.filter(function(f){return f.name.toLowerCase().indexOf(q)>=0;}).slice(0,15);
+var h="";
+for(var k=0;k<r.length;k++){
+var n=r[k].name.replace(/'/g,"");
+h+='<div class="sug" onclick="addFood(\''+n+'\')\">'+r[k].name+' | 🔥'+r[k].cal+'ккал</div>';
+}
+box.innerHTML=h;
+}
+var diary=[];
+function addFood(name){
+var f=DB.find(function(x){return x.name===name;});
+if(!f)return;
+var g=parseFloat(prompt("Граммы?","100"));
+if(!g)return;
+diary.push({name:f.name,g:g,cal:Math.round(f.cal*g/100),pro:Math.round(f.pro*g/10)/10,fat:Math.round(f.fat*g/10)/10,car:Math.round(f.car*g/10)/10});
+document.getElementById("search").value="";document.getElementById("box").innerHTML="";
+updateDiary();saveDiary();
+}
+function updateDiary(){
+document.getElementById("count").textContent=diary.length;
+var t=document.getElementById("totals");
+if(!diary.length){document.getElementById("diary").innerHTML='<div style="color:#888;text-align:center;padding:15px">Дневник пуст</div>';t.style.display="none";return;}
+t.style.display="block";
+var tp=0,tf=0,tc=0,tcal=0,h="";
+for(var i=0;i<diary.length;i++){var d=diary[i];tp+=d.pro;tf+=d.fat;tc+=d.car;tcal+=d.cal;
+h+='<div style="padding:5px;border-bottom:1px solid #1a1a2e">'+d.name+' - '+d.g+'г ('+d.cal+'ккал) <span onclick="del('+i+')" style="color:#ff5252;cursor:pointer">✕</span></div>';}
+document.getElementById("diary").innerHTML=h;
+document.getElementById("tp").textContent=Math.round(tp)+" г";
+document.getElementById("tf").textContent=Math.round(tf)+" г";
+document.getElementById("tc").textContent=Math.round(tc)+" г";
+document.getElementById("tcal").textContent=Math.round(tcal)+" ккал";
+var pp=Math.min(100,tp/NORMS.pro*100),fp=Math.min(100,tf/NORMS.fat*100),cp=Math.min(100,tc/NORMS.car*100);
+document.getElementById("barPro").style.width=pp+"%";document.getElementById("barPro").className="fill "+(pp>=80&&pp<=100?"green":pp>100?"red":"yellow");
+document.getElementById("barFat").style.width=fp+"%";document.getElementById("barFat").className="fill "+(fp>=80&&fp<=100?"green":fp>100?"red":"yellow");
+document.getElementById("barCar").style.width=cp+"%";document.getElementById("barCar").className="fill "+(cp>=80&&cp<=100?"green":cp>100?"red":"yellow");
+}
+function del(i){diary.splice(i,1);updateDiary();saveDiary();}
+function resetDiary(){if(confirm("Очистить?")){diary=[];updateDiary();saveDiary();}}
+function saveDiary(){localStorage.setItem("ad_diary",JSON.stringify(diary));}
+var saved=localStorage.getItem("ad_diary");if(saved){diary=JSON.parse(saved);updateDiary();}
+var scene,camera,renderer,humanMesh;
+function init3D(){
+if(scene)return;
+var c=document.getElementById("viewer3D"),w=c.offsetWidth,h=c.offsetHeight;
+scene=new THREE.Scene();scene.background=new THREE.Color(0x0a0a0f);
+camera=new THREE.PerspectiveCamera(45,w/h,0.1,100);camera.position.set(0,1.5,5);camera.lookAt(0,0.3,0);
+renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(w,h);c.appendChild(renderer.domElement);
+scene.add(new THREE.AmbientLight(0x444455,0.7));
+var l=new THREE.DirectionalLight(0xffffff,1);l.position.set(3,5,3);scene.add(l);
+humanMesh=new THREE.Group();
+var bm=new THREE.MeshPhongMaterial({color:0xeeeedd}),mm=new THREE.MeshPhongMaterial({color:0xcc3333,transparent:true,opacity:0.7}),sm=new THREE.MeshPhongMaterial({color:0xffcc99,transparent:true,opacity:0.85});
+var skull=new THREE.Mesh(new THREE.SphereGeometry(0.28,24,24),bm);skull.position.y=1.35;humanMesh.add(skull);
+for(var i=0;i<7;i++){var rib=new THREE.Mesh(new THREE.TorusGeometry(0.45,0.03,8,10,Math.PI),bm);rib.position.y=0.6-i*0.11;rib.rotation.z=Math.PI/2;humanMesh.add(rib);}
+for(var s=-1;s<=1;s+=2){var ab=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.06,0.8,8),bm);ab.position.set(s*0.55,0.4,0);humanMesh.add(ab);var lb=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.08,1.2,8),bm);lb.position.set(s*0.2,-0.9,0);humanMesh.add(lb);}
+var tm=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.4,1.6,20),mm);tm.position.y=0.15;humanMesh.add(tm);
+for(var s=-1;s<=1;s+=2){var am=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.11,0.8,10),mm);am.position.set(s*0.6,0.2,0);humanMesh.add(am);var lm=new THREE.Mesh(new THREE.CylinderGeometry(0.14,0.16,1.2,10),mm);lm.position.set(s*0.22,-1.1,0);humanMesh.add(lm);}
+var bodySkin=new THREE.Mesh(new THREE.CylinderGeometry(0.52,0.45,1.7,26),sm);bodySkin.position.y=0.15;humanMesh.add(bodySkin);
+var headSkin=new THREE.Mesh(new THREE.SphereGeometry(0.29,26,26),sm);headSkin.position.y=1.35;humanMesh.add(headSkin);
+for(var s=-1;s<=1;s+=2){var a=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.11,1,14),sm);a.position.set(s*0.6,0.2,0);humanMesh.add(a);var l2=new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.17,1.35,14),sm);l2.position.set(s*0.22,-1.15,0);humanMesh.add(l2);}
+var heart=new THREE.Mesh(new THREE.SphereGeometry(0.1,10,10),new THREE.MeshPhongMaterial({color:0xff0000,emissive:0x330000}));heart.position.set(0.1,0.5,0.22);humanMesh.add(heart);
+scene.add(humanMesh);
+function anim(){requestAnimationFrame(anim);humanMesh.rotation.y+=0.003;renderer.render(scene,camera);}
+anim();
+}
+</script>
+</body>
+</html>
