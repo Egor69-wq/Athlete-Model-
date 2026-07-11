@@ -100,7 +100,7 @@ canvas{display:block}
 <script>
 let FOOD_DB=[],DB_LOADED=false;
 
-let FOOD_DB=[],DB_LOADED=false;
+FOOD_DB],DB_LOADED=false;
 async function loadChunk(i){
   const r=await fetch('data_chunks/chunk_'+i+'.txt');
   const b64=await r.text();
