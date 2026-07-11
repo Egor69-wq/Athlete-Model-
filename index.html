@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Athlete Twin Pro</title>
+<style>body{background:#0a0a0f;color:#e0e0e0;font-family:sans-serif;padding:10px}
+input{padding:10px;width:100%;background:#111;border:1px solid #4CAF50;color:#fff;border-radius:8px;margin:8px 0}
+input:focus{border-color:#4CAF50;outline:none}
+.sug{cursor:pointer;padding:8px;border-bottom:1px solid #222}.sug:hover{background:#1a1a2e}
+.card{background:#12121a;padding:12px;border-radius:8px;margin:8px 0}
+.btn{padding:10px;background:#4CAF50;color:#fff;border:none;border-radius:8px;width:100%}</style></head>
+<body><h2>Athlete Twin Pro</h2><p id="status">Loading...</p>
+<input type="text" id="search" placeholder="Поиск 458K продуктов..." oninput="searchFood()" autocomplete="off"><div id="box"></div>
+<div class="card"><b>Дневник</b><div id="diary"></div></div>
+<button class="btn" onclick="resetDiary()">Очистить</button>
+<script src="data1.js"></script><script src="data2.js"></script><script src="data3.js"></script>
+<script>
+var DB=FOODS1.concat(FOODS2).concat(FOODS3);
+document.getElementById("status").textContent="OK "+DB.length+" USDA";
+function searchFood(){
+var q=document.getElementById("search").value.toLowerCase();
+var box=document.getElementById("box");
+if(!q){box.innerHTML="";return;}
+var result=[];
+for(var i=0;i<DB.length&&result.length<15;i++){
+if(DB[i].n.toLowerCase().indexOf(q)>=0)result.push(DB[i]);
+}
+var h="";
+for(var k=0;k<result.length;k++){
+h+='<div class="sug" onclick="addFood("'+result[k].n+'")">'+result[k].n+' | Cal '+result[k].c+'</div>';
+}
+box.innerHTML=h;
+}
+var diary=[];
+function addFood(name){
+for(var i=0;i<DB.length;i++){
+if(DB[i].n===name){
+var g=parseFloat(prompt("Граммы?","100"));
+if(!g)return;
+diary.push({name:DB[i].n,g:g,cal:Math.round(DB[i].c*g/100)});
+document.getElementById("search").value="";document.getElementById("box").innerHTML="";
+updateDiary();
+return;
+}
+}
+}
+function updateDiary(){
+var h="";
+for(var i=0;i<diary.length;i++){
+h+="<div>"+diary[i].name+" - "+diary[i].g+"g ("+diary[i].cal+"kcal)</div>";
+}
+document.getElementById("diary").innerHTML=h;
+}
+function resetDiary(){diary=[];updateDiary();}
+
+
+var scene,camera,renderer,humanMesh,heartPulse=0,breathPhase=0,currentLayer='all';
+function init3D(){
+  if(scene)return;
+  var c=document.getElementById("viewer3D"),w=c.offsetWidth,h=c.offsetHeight;
+  scene=new THREE.Scene();scene.background=new THREE.Color(0x0a0a0f);
+  camera=new THREE.PerspectiveCamera(45,w/h,0.1,100);camera.position.set(0,1.5,5);camera.lookAt(0,0.3,0);
+  renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(w,h);c.appendChild(renderer.domElement);
+  scene.add(new THREE.AmbientLight(0x333344,0.6));
+  var l=new THREE.DirectionalLight(0xffffff,1.2);l.position.set(3,5,3);scene.add(l);
+  createHuman();animate3D();
+}
+function createHuman(){
+  humanMesh=new THREE.Group();
+  var bm=new THREE.MeshStandardMaterial({color:0xeeeedd,roughness:0.3});
+  var mm=new THREE.MeshStandardMaterial({color:0xcc3333,roughness:0.6,transparent:true,opacity:0.75});
+  var fm=new THREE.MeshStandardMaterial({color:0xffdd88,roughness:0.5,transparent:true,opacity:0.35});
+  var sm=new THREE.MeshStandardMaterial({color:0xffcc99,roughness:0.4,transparent:true,opacity:0.85});
+  var skull=new THREE.Mesh(new THREE.SphereGeometry(0.28,24,24),bm);skull.position.y=1.35;skull.scale.set(1,1.15,0.85);skull.name='bone';humanMesh.add(skull);
+  for(var i=0;i<24;i++){var v=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.06,0.1,8),bm);v.position.y=0.8-i*0.12;v.name='bone';humanMesh.add(v);}
+  for(var i=0;i<12;i++){var rib=new THREE.Mesh(new THREE.TorusGeometry(0.5-i*0.02,0.025,8,12,Math.PI),bm);rib.position.y=0.65-i*0.1;rib.rotation.z=Math.PI/2;rib.name='bone';humanMesh.add(rib);}
+  var pelvis=new THREE.Mesh(new THREE.TorusGeometry(0.4,0.07,8,12),bm);pelvis.position.y=-0.15;pelvis.rotation.x=Math.PI/2;pelvis.name='bone';humanMesh.add(pelvis);
+  for(var s=-1;s<=1;s+=2){
+    var humerus=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.05,0.85,8),bm);humerus.position.set(s*0.55,0.5,0);humerus.name='bone';humanMesh.add(humerus);
+    var radius=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.04,0.75,8),bm);radius.position.set(s*0.7,-0.05,0);radius.name='bone';humanMesh.add(radius);
+    var femur=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.07,1.2,8),bm);femur.position.set(s*0.2,-0.8,0);femur.name='bone';humanMesh.add(femur);
+    var tibia=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.05,1.1,8),bm);tibia.position.set(s*0.25,-1.7,0);tibia.name='bone';humanMesh.add(tibia);
+  }
+
+  // МЫШЦЫ
+  for(var s=-1;s<=1;s+=2){
+    var chest=new THREE.Mesh(new THREE.SphereGeometry(0.16,12,8),mm);chest.position.set(s*0.18,0.7,0.2);chest.scale.set(1,0.7,0.5);chest.name='muscle';humanMesh.add(chest);
+    var biceps=new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.09,0.4,8),mm);biceps.position.set(s*0.6,0.25,0);biceps.name='muscle';humanMesh.add(biceps);
+    var quad=new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.14,0.7,8),mm);quad.position.set(s*0.22,-1.1,0);quad.name='muscle';humanMesh.add(quad);
+    var calf=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.08,0.5,8),mm);calf.position.set(s*0.22,-1.8,0);calf.name='muscle';humanMesh.add(calf);
+    var deltoid=new THREE.Mesh(new THREE.SphereGeometry(0.1,8,8),mm);deltoid.position.set(s*0.45,0.6,0);deltoid.name='muscle';humanMesh.add(deltoid);
+    var forearm=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.07,0.4,8),mm);forearm.position.set(s*0.72,-0.1,0);forearm.name='muscle';humanMesh.add(forearm);
+  }
+  for(var r=0;r<2;r++){for(var c=-1;c<=1;c+=2){var abs=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.1,0.05),mm);abs.position.set(c*0.07,0.35-r*0.12,0.25);abs.name='muscle';humanMesh.add(abs);}}
+  var torsoM=new THREE.Mesh(new THREE.CylinderGeometry(0.48,0.38,1.5,20),mm);torsoM.position.y=0.15;torsoM.name='muscle';humanMesh.add(torsoM);
+
+  // ЖИР
+  var belly=new THREE.Mesh(new THREE.SphereGeometry(0.28,16,12),fm);belly.position.set(0,0.1,0.1);belly.scale.set(1,0.7,0.6);belly.name='fat';humanMesh.add(belly);
+  var loveHandles=new THREE.Mesh(new THREE.TorusGeometry(0.42,0.1,8,16),fm);loveHandles.position.y=-0.05;loveHandles.rotation.x=Math.PI/2;loveHandles.name='fat';humanMesh.add(loveHandles);
+
+  // КОЖА
+  var bodySkin=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.43,1.7,32),sm);bodySkin.position.y=0.15;bodySkin.name='skin';humanMesh.add(bodySkin);
+  var headSkin=new THREE.Mesh(new THREE.SphereGeometry(0.29,32,32),sm);headSkin.position.y=1.35;headSkin.scale.set(1,1.15,0.85);headSkin.name='skin';humanMesh.add(headSkin);
+  for(var s=-1;s<=1;s+=2){
+    var armSkin=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.1,1.1,16),sm);armSkin.position.set(s*0.6,0.2,0);armSkin.name='skin';humanMesh.add(armSkin);
+    var legSkin=new THREE.Mesh(new THREE.CylinderGeometry(0.14,0.16,1.4,16),sm);legSkin.position.set(s*0.22,-1.15,0);legSkin.name='skin';humanMesh.add(legSkin);
+  }
+
+  // ОРГАНЫ
+  var heart=new THREE.Mesh(new THREE.SphereGeometry(0.09,12,12),new THREE.MeshStandardMaterial({color:0xff0000,emissive:0x330000,roughness:0.2}));heart.position.set(0.08,0.5,0.22);heart.name='organ';humanMesh.add(heart);
+  var liver=new THREE.Mesh(new THREE.BoxGeometry(0.18,0.1,0.07),new THREE.MeshStandardMaterial({color:0x8b2222,roughness:0.3}));liver.position.set(-0.14,0.4,0.18);liver.name='organ';humanMesh.add(liver);
+  for(var s=-1;s<=1;s+=2){var lung=new THREE.Mesh(new THREE.SphereGeometry(0.09,10,8),new THREE.MeshStandardMaterial({color:0xff7777,roughness:0.4,transparent:true,opacity:0.6}));lung.position.set(s*0.09,0.55,0.15);lung.name='organ';humanMesh.add(lung);}
+  var brain=new THREE.Mesh(new THREE.SphereGeometry(0.17,16,12),new THREE.MeshStandardMaterial({color:0xffaaaa,roughness:0.5}));brain.position.set(0,1.45,0);brain.name='organ';humanMesh.add(brain);
+  var stomach=new THREE.Mesh(new THREE.SphereGeometry(0.08,8,8),new THREE.MeshStandardMaterial({color:0xff8888,roughness:0.4}));stomach.position.set(0.05,0.35,0.2);stomach.name='organ';humanMesh.add(stomach);
+  var kidney1=new THREE.Mesh(new THREE.SphereGeometry(0.05,8,8),new THREE.MeshStandardMaterial({color:0xcc4444,roughness:0.3}));kidney1.position.set(-0.1,0.25,0.25);kidney1.name='organ';humanMesh.add(kidney1);
+  var kidney2=new THREE.Mesh(new THREE.SphereGeometry(0.05,8,8),new THREE.MeshStandardMaterial({color:0xcc4444,roughness:0.3}));kidney2.position.set(0.12,0.25,0.25);kidney2.name='organ';humanMesh.add(kidney2);
+
+  // КРОВЕНОСНЫЕ СОСУДЫ (упрощённые)
+  for(var s=-1;s<=1;s+=2){
+    var carotid=new THREE.Mesh(new THREE.CylinderGeometry(0.015,0.015,0.3,6),new THREE.MeshStandardMaterial({color:0xcc0000}));carotid.position.set(s*0.04,1.0,0.18);carotid.name='vessel';humanMesh.add(carotid);
+    var femoral=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,0.8,6),new THREE.MeshStandardMaterial({color:0xcc0000}));femoral.position.set(s*0.2,-1.2,0.1);femoral.name='vessel';humanMesh.add(femoral);
+  }
+  var aorta=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,1.0,8),new THREE.MeshStandardMaterial({color:0xcc0000}));aorta.position.set(0,0.4,0.3);aorta.name='vessel';humanMesh.add(aorta);
+
+  scene.add(humanMesh);
+}
+
+function animate3D(){
+  requestAnimationFrame(animate3D);
+  if(humanMesh){
+    humanMesh.rotation.y+=0.003;
+    heartPulse+=0.1;breathPhase+=0.05;
+    humanMesh.children.forEach(function(c){
+      if(c.name==='organ'){
+        if(c.material.color&&c.material.color.getHex()===0xff0000){var s=1+Math.sin(heartPulse)*0.06;c.scale.set(s,s,s);}
+        if(c.material.opacity===0.6){var breath=1+Math.sin(breathPhase)*0.1;c.scale.set(breath,breath,breath);}
+      }
+    });
+  }
+  if(renderer)renderer.render(scene,camera);
+}
+
+function toggleLayer(l){
+  currentLayer=currentLayer===l?'all':l;
+  humanMesh.children.forEach(function(c){
+    if(c.name==='muscle')c.material.opacity=currentLayer==='muscle'||currentLayer==='all'?0.75:0;
+    if(c.name==='fat')c.material.opacity=currentLayer==='fat'||currentLayer==='all'?0.35:0;
+    if(c.name==='skin')c.material.opacity=currentLayer==='skin'||currentLayer==='all'?0.85:0.1;
+    if(c.name==='bone')c.material.opacity=currentLayer==='bone'||currentLayer==='all'?1:0.1;
+    if(c.name==='organ')c.material.opacity=currentLayer==='organs'||currentLayer==='all'?1:0;
+    if(c.name==='vessel')c.material.opacity=currentLayer==='vessels'||currentLayer==='all'?1:0;
+  });
+}
+
+function updateBody(){
+  var m=parseInt(document.getElementById('muscleSlider').value);
+  var f=parseInt(document.getElementById('fatSlider').value);
+  var s=parseInt(document.getElementById('skinSlider').value)/100;
+  document.getElementById('muscleVal').textContent=m+'%';
+  document.getElementById('fatVal').textContent=f+'%';
+  document.getElementById('skinVal').textContent=Math.round(s*100)+'%';
+  if(humanMesh)humanMesh.children.forEach(function(c){
+    if(c.name==='muscle'){var sc=1+(m-45)*0.01;c.scale.set(sc,sc,sc);c.material.opacity=currentLayer==='muscle'||currentLayer==='all'?0.5+(m-20)*0.015:0;}
+    if(c.name==='fat'){var sc=1+(f-20)*0.012;c.scale.set(sc,sc,sc);c.material.opacity=currentLayer==='fat'||currentLayer==='all'?0.2+(f-3)*0.01:0;}
+    if(c.name==='skin')c.material.opacity=currentLayer==='skin'||currentLayer==='all'?s:0.1;
+    if(c.name==='bone')c.material.opacity=currentLayer==='bone'||currentLayer==='all'?1:0.1;
+    if(c.name==='organ')c.material.opacity=currentLayer==='organs'||currentLayer==='all'?1:0;
+    if(c.name==='vessel')c.material.opacity=currentLayer==='vessels'||currentLayer==='all'?1:0;
+  });
+}
+
+</script></body></html>
