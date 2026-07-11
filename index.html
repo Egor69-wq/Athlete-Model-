@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"><title>Athlete Digital Twin Pro | 458K</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root{--bg:#0a0a0f;--card:#12121a;--accent:#4CAF50;--blue:#2196F3;--text:#e0e0e0;--muted:#888;--border:#1a1a2e;--red:#ff5252;--orange:#ff9800;--purple:#7c4dff}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,sans-serif;background:var(--bg);color:var(--text);padding-bottom:70px}
+.header{background:linear-gradient(135deg,#0a0a0f,#1a1a2e);padding:12px;text-align:center;border-bottom:2px solid var(--accent)}
+.title{font-size:20px;font-weight:700;background:linear-gradient(135deg,#4CAF50,#2196F3);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.subtitle{font-size:10px;color:var(--muted)}
+.tabs{display:flex;gap:2px;padding:6px;background:var(--bg);position:sticky;top:0;z-index:99;border-bottom:1px solid var(--border)}
+.tab{flex:1;padding:10px 2px;background:transparent;border:none;border-radius:8px;color:var(--muted);font-weight:600;cursor:pointer;font-size:10px}
+.tab.active{background:var(--accent);color:#fff}.tab-content{display:none}.tab-content.active{display:block}
+.card{background:var(--card);border-radius:14px;padding:12px;margin:6px;border:1px solid var(--border)}
+.card-title{font-size:13px;font-weight:600;margin-bottom:8px;color:var(--accent)}
+input,select{width:100%;padding:12px;background:#0a0a0f;border:1px solid var(--border);border-radius:10px;color:#fff;font-size:14px;margin-bottom:4px;-webkit-appearance:none}
+input:focus{border-color:var(--accent);outline:none}
+.btn{width:100%;padding:12px;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-size:13px;margin-top:4px}
+.btn-green{background:var(--accent);color:#fff}.btn-red{background:var(--red);color:#fff}.btn-blue{background:var(--blue);color:#fff}.btn-purple{background:var(--purple);color:#fff}
+.hidden{display:none}
+.suggestions-box{background:var(--card);border-radius:10px;max-height:250px;overflow-y:auto;border:1px solid var(--accent);margin-top:2px}
+.sug-item{padding:10px;border-bottom:1px solid var(--border);cursor:pointer;font-size:12px}.sug-item:active{background:#1a1a2e}.sug-item .name{font-weight:600;color:#fff}.sug-item .meta{font-size:10px;color:var(--accent)}
+.diary-item{background:#0a0a0f;padding:8px 10px;border-radius:8px;margin-bottom:3px;display:flex;justify-content:space-between;align-items:center;font-size:12px}.diary-item .del{color:var(--red);cursor:pointer;font-weight:700;padding:4px 8px}
+.stat-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px}.stat-val{font-weight:600;color:var(--accent)}
+.progress-bar{height:8px;border-radius:4px;background:#1a1a2e;margin:4px 0;overflow:hidden}.progress-fill{height:100%;border-radius:4px;transition:width 0.5s}
+.fill-green{background:var(--accent)}.fill-yellow{background:var(--orange)}.fill-red{background:var(--red)}
+#viewer3D{width:100%;height:400px;background:#000;border-radius:12px;touch-action:manipulation}
+.slider-container{margin:4px 0}.slider-container label{font-size:10px;color:var(--muted);display:flex;justify-content:space-between}
+input[type=range]{width:100%;accent-color:var(--accent)}canvas{display:block}.row{display:flex;gap:4px}.row .btn{flex:1}
+.bio-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px}.bio-item{background:#0a0a0f;padding:8px;border-radius:8px;text-align:center;border:1px solid var(--border)}.bio-item .n{font-size:10px;color:var(--muted)}.bio-item .v{font-size:16px;font-weight:700}.bio-item .s{font-size:8px}
+</style></head><body>
+<div class="header"><div class="title">🧬 Athlete Digital Twin Pro</div><div class="subtitle" id="status">Загрузка базы USDA...</div></div>
+<div class="tabs"><button class="tab active" onclick="switchTab('eat')">🍽 Еда</button><button class="tab" onclick="switchTab('bio')">🩸 Био</button><button class="tab" onclick="switchTab('sim')">📊 Сим</button><button class="tab" onclick="switchTab('body')">🧍 3D</button></div>
+<div id="tab-eat" class="tab-content active">
+<div class="card"><div class="card-title">🔍 Поиск (458 452 продукта)</div><input type="text" id="search" placeholder="Введите продукт..." oninput="searchFood()" autocomplete="off"><div id="suggestionsBox" class="suggestions-box"></div></div>
+<div class="card"><div class="card-title">📋 Дневник (<span id="count">0</span>)</div><div id="diary"></div><div id="totals" class="hidden">
+<div class="stat-row"><span>🥩 Белки</span><span class="stat-val" id="tp">0 г</span></div><div class="progress-bar"><div id="barPro" class="progress-fill fill-green" style="width:0%"></div></div>
+<div class="stat-row"><span>🧈 Жиры</span><span class="stat-val" id="tf">0 г</span></div><div class="progress-bar"><div id="barFat" class="progress-fill fill-green" style="width:0%"></div></div>
+<div class="stat-row"><span>🌾 Углеводы</span><span class="stat-val" id="tc">0 г</span></div><div class="progress-bar"><div id="barCar" class="progress-fill fill-green" style="width:0%"></div></div>
+<div class="stat-row"><span>🔥 Калории</span><span class="stat-val" id="tcal">0 ккал</span></div></div><button class="btn btn-red" onclick="resetDiary()">🗑 Очистить</button></div></div>
+<div id="tab-bio" class="tab-content"><div class="card"><div class="card-title">🩸 Биомаркеры</div><div class="bio-grid" id="bioGrid"></div></div><div class="card"><div class="card-title">🧪 Гормоны</div><div class="bio-grid" id="hormoneGrid"></div></div></div>
+<div id="tab-sim" class="tab-content"><div class="card"><div class="card-title">👤 Параметры</div><input type="number" id="w" value="80" placeholder="Вес (кг)"><input type="number" id="h" value="175" placeholder="Рост (см)"><input type="number" id="age" value="25" placeholder="Возраст"><select id="gender"><option value="male">Мужчина</option><option value="female">Женщина</option></select><button class="btn btn-green" onclick="runSim()">🚀 Симуляция 90 дней</button></div><div id="simResult" class="hidden"><div class="card"><div class="card-title">📊 Прогноз веса</div><canvas id="chart" width="340" height="180"></canvas><div id="simStats"></div></div></div></div>
+<div id="tab-body" class="tab-content"><div class="card"><div class="card-title">🧍 3D Анатомия</div><div id="viewer3D"></div><div class="slider-container"><label>💪 Мышцы <span id="muscleVal">45%</span></label><input type="range" id="muscleSlider" min="20" max="70" value="45" oninput="updateBody()"></div><div class="slider-container"><label>🍔 Жир <span id="fatVal">20%</span></label><input type="range" id="fatSlider" min="3" max="60" value="20" oninput="updateBody()"></div><div class="slider-container"><label>👁 Кожа <span id="skinVal">80%</span></label><input type="range" id="skinSlider" min="0" max="100" value="80" oninput="updateBody()"></div><div class="row"><button class="btn btn-blue" onclick="toggleLayer('skin')">🟤 Кожа</button><button class="btn btn-purple" onclick="toggleLayer('muscle')">🔴 Мышцы</button><button class="btn btn-blue" onclick="toggleLayer('bone')">⚪ Скелет</button><button class="btn btn-purple" onclick="toggleLayer('organs')">❤️ Органы</button><button class="btn btn-blue" onclick="toggleLayer('vessels')">🩸 Сосуды</button></div></div></div>
+<script src="data1.js"></script><script src="data2.js"></script><script src="data3.js"></script><script>
+var DB=FOODS1.concat(FOODS2).concat(FOODS3);document.getElementById("status").textContent="✅ "+DB.length+" USDA";var NORMS={pro:120,fat:70,car:300};var diary=[];
+function searchFood(){var q=document.getElementById("search").value.toLowerCase();var box=document.getElementById("suggestionsBox");if(!q){box.innerHTML="";return;}var result=[];for(var i=0;i<DB.length&&result.length<15;i++){if(DB[i].n.toLowerCase().indexOf(q)>=0)result.push(DB[i]);}box.innerHTML=result.map(function(f){return'<div class="sug-item" onclick="addFood(\''+f.n.replace(/'/g,"")+'\')"><div class="name">'+f.n+'</div><div class="meta">🔥'+f.c+'ккал | 🥩'+f.p+'г | 🧈'+f.f+'г | 🌾'+f.ch+'г</div></div>';}).join("");}
+function addFood(name){var f=DB.find(function(x){return x.n===name;});if(!f)return;var g=parseFloat(prompt("Граммы?","100"));if(!g)return;diary.push({name:f.n,g:g,cal:Math.round(f.c*g/100),pro:Math.round(f.p*g/10)/10,fat:Math.round(f.f*g/10)/10,car:Math.round(f.ch*g/10)/10});document.getElementById("search").value="";document.getElementById("suggestionsBox").innerHTML="";updateDiary();saveDiary();}
+function updateDiary(){document.getElementById("count").textContent=diary.length;var t=document.getElementById("totals");if(!diary.length){document.getElementById("diary").innerHTML='<div style="color:#888;text-align:center;padding:15px">Дневник пуст</div>';t.classList.add("hidden");return;}t.classList.remove("hidden");var tp=0,tf=0,tc=0,tcal=0,h="";for(var i=0;i<diary.length;i++){var d=diary[i];tp+=d.pro;tf+=d.fat;tc+=d.car;tcal+=d.cal;h+='<div class="diary-item"><span>'+d.name+'</span><span>'+d.g+'г | '+d.cal+'ккал</span><span class="del" onclick="del('+i+')">✕</span></div>';}document.getElementById("diary").innerHTML=h;document.getElementById("tp").textContent=Math.round(tp)+" г";document.getElementById("tf").textContent=Math.round(tf)+" г";document.getElementById("tc").textContent=Math.round(tc)+" г";document.getElementById("tcal").textContent=Math.round(tcal)+" ккал";var pp=Math.min(100,tp/NORMS.pro*100),fp=Math.min(100,tf/NORMS.fat*100),cp=Math.min(100,tc/NORMS.car*100);document.getElementById("barPro").style.width=pp+"%";document.getElementById("barPro").className="progress-fill "+(pp>=80&&pp<=100?"fill-green":pp>100?"fill-red":"fill-yellow");document.getElementById("barFat").style.width=fp+"%";document.getElementById("barFat").className="progress-fill "+(fp>=80&&fp<=100?"fill-green":fp>100?"fill-red":"fill-yellow");document.getElementById("barCar").style.width=cp+"%";document.getElementById("barCar").className="progress-fill "+(cp>=80&&cp<=100?"fill-green":cp>100?"fill-red":"fill-yellow");}
+function del(i){diary.splice(i,1);updateDiary();saveDiary();}
+function resetDiary(){if(confirm("Очистить?")){diary=[];updateDiary();saveDiary();}}
+function saveDiary(){localStorage.setItem("ad",JSON.stringify(diary));}
+var saved=localStorage.getItem("ad");if(saved){diary=JSON.parse(saved);updateDiary();}
+function switchTab(t){document.querySelectorAll(".tab").forEach(function(b){b.classList.remove("active");});document.querySelectorAll(".tab-content").forEach(function(d){d.classList.remove("active");});document.getElementById("tab-"+t).classList.add("active");event.target.classList.add("active");if(t==="body")setTimeout(init3D,200);if(t==="bio")updateBio();}
+function updateBio(){var w=parseFloat(document.getElementById("w").value)||80;var h=parseFloat(document.getElementById("h").value)||175;var age=parseInt(document.getElementById("age").value)||25;var gender=document.getElementById("gender").value;var bmi=w/((h/100)*(h/100));var bmr=gender==="male"?10*w+6.25*h-5*age+5:10*w+6.25*h-5*age-161;var test=gender==="male"?Math.max(200,700-age*5):Math.max(15,70-age*0.5);var bio=[{n:"ИМТ",v:bmi.toFixed(1),u:"кг/м²",s:bmi<18.5?"low":bmi>25?"high":"normal"},{n:"BMR",v:Math.round(bmr),u:"ккал",s:"normal"},{n:"Тестостерон",v:Math.round(test),u:"нг/дл",s:test<300?"low":"normal"},{n:"Глюкоза",v:(5.2+(w-80)*0.05).toFixed(1),u:"ммоль/л",s:"normal"},{n:"HDL",v:Math.max(0.8,1.5-(w-80)*0.02).toFixed(1),u:"ммоль/л",s:"normal"},{n:"LDL",v:(2.5+(w-80)*0.04).toFixed(1),u:"ммоль/л",s:"normal"},{n:"Витамин D",v:Math.round(Math.max(20,60-(w-80)*0.5)),u:"нг/мл",s:"normal"}];document.getElementById("bioGrid").innerHTML=bio.slice(0,4).map(function(b){return'<div class="bio-item"><div class="n">'+b.n+'</div><div class="v" style="color:'+(b.s==="normal"?"#4CAF50":"#ff9800")+'">'+b.v+' '+b.u+'</div><div class="s">'+(b.s==="normal"?"✅":"⚠")+'</div></div>';}).join("");document.getElementById("hormoneGrid").innerHTML=bio.slice(4).map(function(b){return'<div class="bio-item"><div class="n">'+b.n+'</div><div class="v" style="color:'+(b.s==="normal"?"#4CAF50":"#ff9800")+'">'+b.v+' '+b.u+'</div><div class="s">'+(b.s==="normal"?"✅":"⚠")+'</div></div>';}).join("");}
+function runSim(){updateBio();var w=parseFloat(document.getElementById("w").value)||80;var h=parseFloat(document.getElementById("h").value)||175;var age=parseInt(document.getElementById("age").value)||25;var gender=document.getElementById("gender").value;var bmr=gender==="male"?10*w+6.25*h-5*age+5:10*w+6.25*h-5*age-161;var tdee=bmr*1.55;var tcal=0;diary.forEach(function(x){tcal+=x.cal||0;});var days=90,weight=w,pts=[];for(var d=0;d<days;d++){weight+=(tcal-tdee)/7700;pts.push({day:d+1,weight:weight});}var canvas=document.getElementById("chart"),ctx=canvas.getContext("2d");ctx.clearRect(0,0,340,180);ctx.fillStyle="#0a0a0f";ctx.fillRect(0,0,340,180);var maxW=Math.max.apply(null,pts.map(function(p){return p.weight;}))*1.05;var minW=Math.min.apply(null,pts.map(function(p){return p.weight;}))*0.95;ctx.strokeStyle="#4CAF50";ctx.lineWidth=2;ctx.beginPath();pts.forEach(function(p,i){var x=20+300*i/(pts.length-1),y=160-140*(p.weight-minW)/(maxW-minW);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.stroke();var last=pts[pts.length-1];document.getElementById("simStats").innerHTML='<div style="display:flex;justify-content:space-between;padding:3px"><span>Вес через '+days+' дн.</span><span style="color:#4CAF50;font-weight:600">'+last.weight.toFixed(1)+' кг</span></div><div style="display:flex;justify-content:space-between;padding:3px"><span>Изменение</span><span style="color:'+(last.weight>w?"#4CAF50":"#ff5252")+'">'+(last.weight-w>0?"+":"")+(last.weight-w).toFixed(1)+' кг</span></div>';document.getElementById("simResult").classList.remove("hidden");}
+
+var scene,camera,renderer,humanMesh,heartPulse=0,breathPhase=0,currentLayer='all';
+function init3D(){
+  if(scene)return;
+  var c=document.getElementById("viewer3D"),w=c.offsetWidth,h=c.offsetHeight;
+  scene=new THREE.Scene();scene.background=new THREE.Color(0x0a0a0f);
+  camera=new THREE.PerspectiveCamera(45,w/h,0.1,100);camera.position.set(0,1.5,5);camera.lookAt(0,0.3,0);
+  renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(w,h);c.appendChild(renderer.domElement);
+  scene.add(new THREE.AmbientLight(0x333344,0.6));
+  var l=new THREE.DirectionalLight(0xffffff,1.2);l.position.set(3,5,3);scene.add(l);
+  createHuman();animate3D();
+}
+function createHuman(){
+  humanMesh=new THREE.Group();
+  var bm=new THREE.MeshStandardMaterial({color:0xeeeedd,roughness:0.3});
+  var mm=new THREE.MeshStandardMaterial({color:0xcc3333,roughness:0.6,transparent:true,opacity:0.75});
+  var fm=new THREE.MeshStandardMaterial({color:0xffdd88,roughness:0.5,transparent:true,opacity:0.35});
+  var sm=new THREE.MeshStandardMaterial({color:0xffcc99,roughness:0.4,transparent:true,opacity:0.85});
+  var skull=new THREE.Mesh(new THREE.SphereGeometry(0.28,24,24),bm);skull.position.y=1.35;skull.scale.set(1,1.15,0.85);skull.name='bone';humanMesh.add(skull);
+  for(var i=0;i<24;i++){var v=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.06,0.1,8),bm);v.position.y=0.8-i*0.12;v.name='bone';humanMesh.add(v);}
+  for(var i=0;i<12;i++){var rib=new THREE.Mesh(new THREE.TorusGeometry(0.5-i*0.02,0.025,8,12,Math.PI),bm);rib.position.y=0.65-i*0.1;rib.rotation.z=Math.PI/2;rib.name='bone';humanMesh.add(rib);}
+  var pelvis=new THREE.Mesh(new THREE.TorusGeometry(0.4,0.07,8,12),bm);pelvis.position.y=-0.15;pelvis.rotation.x=Math.PI/2;pelvis.name='bone';humanMesh.add(pelvis);
+  for(var s=-1;s<=1;s+=2){
+    var humerus=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.05,0.85,8),bm);humerus.position.set(s*0.55,0.5,0);humerus.name='bone';humanMesh.add(humerus);
+    var radius=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.04,0.75,8),bm);radius.position.set(s*0.7,-0.05,0);radius.name='bone';humanMesh.add(radius);
+    var femur=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.07,1.2,8),bm);femur.position.set(s*0.2,-0.8,0);femur.name='bone';humanMesh.add(femur);
+    var tibia=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.05,1.1,8),bm);tibia.position.set(s*0.25,-1.7,0);tibia.name='bone';humanMesh.add(tibia);
+  }
+
+  // МЫШЦЫ
+  for(var s=-1;s<=1;s+=2){
+    var chest=new THREE.Mesh(new THREE.SphereGeometry(0.16,12,8),mm);chest.position.set(s*0.18,0.7,0.2);chest.scale.set(1,0.7,0.5);chest.name='muscle';humanMesh.add(chest);
+    var biceps=new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.09,0.4,8),mm);biceps.position.set(s*0.6,0.25,0);biceps.name='muscle';humanMesh.add(biceps);
+    var quad=new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.14,0.7,8),mm);quad.position.set(s*0.22,-1.1,0);quad.name='muscle';humanMesh.add(quad);
+    var calf=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.08,0.5,8),mm);calf.position.set(s*0.22,-1.8,0);calf.name='muscle';humanMesh.add(calf);
+    var deltoid=new THREE.Mesh(new THREE.SphereGeometry(0.1,8,8),mm);deltoid.position.set(s*0.45,0.6,0);deltoid.name='muscle';humanMesh.add(deltoid);
+    var forearm=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.07,0.4,8),mm);forearm.position.set(s*0.72,-0.1,0);forearm.name='muscle';humanMesh.add(forearm);
+  }
+  for(var r=0;r<2;r++){for(var c=-1;c<=1;c+=2){var abs=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.1,0.05),mm);abs.position.set(c*0.07,0.35-r*0.12,0.25);abs.name='muscle';humanMesh.add(abs);}}
+  var torsoM=new THREE.Mesh(new THREE.CylinderGeometry(0.48,0.38,1.5,20),mm);torsoM.position.y=0.15;torsoM.name='muscle';humanMesh.add(torsoM);
+
+  // ЖИР
+  var belly=new THREE.Mesh(new THREE.SphereGeometry(0.28,16,12),fm);belly.position.set(0,0.1,0.1);belly.scale.set(1,0.7,0.6);belly.name='fat';humanMesh.add(belly);
+  var loveHandles=new THREE.Mesh(new THREE.TorusGeometry(0.42,0.1,8,16),fm);loveHandles.position.y=-0.05;loveHandles.rotation.x=Math.PI/2;loveHandles.name='fat';humanMesh.add(loveHandles);
+
+  // КОЖА
+  var bodySkin=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.43,1.7,32),sm);bodySkin.position.y=0.15;bodySkin.name='skin';humanMesh.add(bodySkin);
+  var headSkin=new THREE.Mesh(new THREE.SphereGeometry(0.29,32,32),sm);headSkin.position.y=1.35;headSkin.scale.set(1,1.15,0.85);headSkin.name='skin';humanMesh.add(headSkin);
+  for(var s=-1;s<=1;s+=2){
+    var armSkin=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.1,1.1,16),sm);armSkin.position.set(s*0.6,0.2,0);armSkin.name='skin';humanMesh.add(armSkin);
+    var legSkin=new THREE.Mesh(new THREE.CylinderGeometry(0.14,0.16,1.4,16),sm);legSkin.position.set(s*0.22,-1.15,0);legSkin.name='skin';humanMesh.add(legSkin);
+  }
+
+  // ОРГАНЫ
+  var heart=new THREE.Mesh(new THREE.SphereGeometry(0.09,12,12),new THREE.MeshStandardMaterial({color:0xff0000,emissive:0x330000,roughness:0.2}));heart.position.set(0.08,0.5,0.22);heart.name='organ';humanMesh.add(heart);
+  var liver=new THREE.Mesh(new THREE.BoxGeometry(0.18,0.1,0.07),new THREE.MeshStandardMaterial({color:0x8b2222,roughness:0.3}));liver.position.set(-0.14,0.4,0.18);liver.name='organ';humanMesh.add(liver);
+  for(var s=-1;s<=1;s+=2){var lung=new THREE.Mesh(new THREE.SphereGeometry(0.09,10,8),new THREE.MeshStandardMaterial({color:0xff7777,roughness:0.4,transparent:true,opacity:0.6}));lung.position.set(s*0.09,0.55,0.15);lung.name='organ';humanMesh.add(lung);}
+  var brain=new THREE.Mesh(new THREE.SphereGeometry(0.17,16,12),new THREE.MeshStandardMaterial({color:0xffaaaa,roughness:0.5}));brain.position.set(0,1.45,0);brain.name='organ';humanMesh.add(brain);
+  var stomach=new THREE.Mesh(new THREE.SphereGeometry(0.08,8,8),new THREE.MeshStandardMaterial({color:0xff8888,roughness:0.4}));stomach.position.set(0.05,0.35,0.2);stomach.name='organ';humanMesh.add(stomach);
+  var kidney1=new THREE.Mesh(new THREE.SphereGeometry(0.05,8,8),new THREE.MeshStandardMaterial({color:0xcc4444,roughness:0.3}));kidney1.position.set(-0.1,0.25,0.25);kidney1.name='organ';humanMesh.add(kidney1);
+  var kidney2=new THREE.Mesh(new THREE.SphereGeometry(0.05,8,8),new THREE.MeshStandardMaterial({color:0xcc4444,roughness:0.3}));kidney2.position.set(0.12,0.25,0.25);kidney2.name='organ';humanMesh.add(kidney2);
+
+  // КРОВЕНОСНЫЕ СОСУДЫ (упрощённые)
+  for(var s=-1;s<=1;s+=2){
+    var carotid=new THREE.Mesh(new THREE.CylinderGeometry(0.015,0.015,0.3,6),new THREE.MeshStandardMaterial({color:0xcc0000}));carotid.position.set(s*0.04,1.0,0.18);carotid.name='vessel';humanMesh.add(carotid);
+    var femoral=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,0.8,6),new THREE.MeshStandardMaterial({color:0xcc0000}));femoral.position.set(s*0.2,-1.2,0.1);femoral.name='vessel';humanMesh.add(femoral);
+  }
+  var aorta=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,1.0,8),new THREE.MeshStandardMaterial({color:0xcc0000}));aorta.position.set(0,0.4,0.3);aorta.name='vessel';humanMesh.add(aorta);
+
+  scene.add(humanMesh);
+}
+
+function animate3D(){
+  requestAnimationFrame(animate3D);
+  if(humanMesh){
+    humanMesh.rotation.y+=0.003;
+    heartPulse+=0.1;breathPhase+=0.05;
+    humanMesh.children.forEach(function(c){
+      if(c.name==='organ'){
+        if(c.material.color&&c.material.color.getHex()===0xff0000){var s=1+Math.sin(heartPulse)*0.06;c.scale.set(s,s,s);}
+        if(c.material.opacity===0.6){var breath=1+Math.sin(breathPhase)*0.1;c.scale.set(breath,breath,breath);}
+      }
+    });
+  }
+  if(renderer)renderer.render(scene,camera);
+}
+
+function toggleLayer(l){
+  currentLayer=currentLayer===l?'all':l;
+  humanMesh.children.forEach(function(c){
+    if(c.name==='muscle')c.material.opacity=currentLayer==='muscle'||currentLayer==='all'?0.75:0;
+    if(c.name==='fat')c.material.opacity=currentLayer==='fat'||currentLayer==='all'?0.35:0;
+    if(c.name==='skin')c.material.opacity=currentLayer==='skin'||currentLayer==='all'?0.85:0.1;
+    if(c.name==='bone')c.material.opacity=currentLayer==='bone'||currentLayer==='all'?1:0.1;
+    if(c.name==='organ')c.material.opacity=currentLayer==='organs'||currentLayer==='all'?1:0;
+    if(c.name==='vessel')c.material.opacity=currentLayer==='vessels'||currentLayer==='all'?1:0;
+  });
+}
+
+function updateBody(){
+  var m=parseInt(document.getElementById('muscleSlider').value);
+  var f=parseInt(document.getElementById('fatSlider').value);
+  var s=parseInt(document.getElementById('skinSlider').value)/100;
+  document.getElementById('muscleVal').textContent=m+'%';
+  document.getElementById('fatVal').textContent=f+'%';
+  document.getElementById('skinVal').textContent=Math.round(s*100)+'%';
+  if(humanMesh)humanMesh.children.forEach(function(c){
+    if(c.name==='muscle'){var sc=1+(m-45)*0.01;c.scale.set(sc,sc,sc);c.material.opacity=currentLayer==='muscle'||currentLayer==='all'?0.5+(m-20)*0.015:0;}
+    if(c.name==='fat'){var sc=1+(f-20)*0.012;c.scale.set(sc,sc,sc);c.material.opacity=currentLayer==='fat'||currentLayer==='all'?0.2+(f-3)*0.01:0;}
+    if(c.name==='skin')c.material.opacity=currentLayer==='skin'||currentLayer==='all'?s:0.1;
+    if(c.name==='bone')c.material.opacity=currentLayer==='bone'||currentLayer==='all'?1:0.1;
+    if(c.name==='organ')c.material.opacity=currentLayer==='organs'||currentLayer==='all'?1:0;
+    if(c.name==='vessel')c.material.opacity=currentLayer==='vessels'||currentLayer==='all'?1:0;
+  });
+}
+
+</script>
+</body>
+</html>
