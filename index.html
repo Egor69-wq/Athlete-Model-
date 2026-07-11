@@ -18,6 +18,7 @@ for(var i=0;i<10;i++){
 var url="chunk_"+i+".txt";
 var r=await fetch(url);
 var t=await r.text();
+t=t.split('"')[1];
 var bin=atob(t);
 var bytes=new Uint8Array(bin.length);
 for(var j=0;j<bin.length;j++)bytes[j]=bin.charCodeAt(j);
