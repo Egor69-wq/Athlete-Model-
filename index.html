@@ -15,7 +15,8 @@
 var DB=[],loaded=false;
 async function init(){
 for(var i=0;i<10;i++){
-var r=await fetch("data_chunks/chunk_"+i+".txt");
+var url="chunk_"+i+".txt";
+var r=await fetch(url);
 var t=await r.text();
 var bin=atob(t);
 var bytes=new Uint8Array(bin.length);
@@ -37,7 +38,7 @@ var box=document.getElementById("box");
 if(!q||!loaded){box.innerHTML="";return;}
 var r=DB.filter(function(f){return f.name.toLowerCase().indexOf(q)>=0;}).slice(0,10);
 var h="";
-for(var k=0;k<r.length;k++){h+="<div onclick=\"add('"+r[k].name+"')\" style=\"padding:8px;cursor:pointer\">"+r[k].name+" | 🔥"+r[k].cal+"ккал</div>";}
+for(var k=0;k<r.length;k++){h+="<div onclick=\"add('"+r[k].name+"')\" style=\"padding:8px;cursor:pointer;border-bottom:1px solid #333\">"+r[k].name+" | 🔥"+r[k].cal+"ккал</div>";}
 box.innerHTML=h;
 }
 var diary=[];
