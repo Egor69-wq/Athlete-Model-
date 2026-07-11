@@ -1,80 +1,9 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Athlete Twin</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<style>
-body{background:#0a0a0f;color:#fff;font-family:sans-serif;padding:10px}
-input{padding:10px;width:100%;background:#111;border:1px solid #4CAF50;color:#fff;border-radius:8px}
-.card{background:#12121a;padding:10px;margin:5px 0;border-radius:8px}
-.btn{background:#4CAF50;color:#fff;padding:10px;border:none;border-radius:8px;margin:3px}
-.hidden{display:none}
-</style>
-</head>
-<body>
-<h2>🧬 Athlete Twin</h2>
-<p id="status">Загрузка...</p>
-<input type="text" id="search" placeholder="Поиск продукта..." oninput="searchFood()">
-<div id="box"></div>
-<div class="card"><b>Дневник:</b> <span id="count">0</span></div>
-<div id="diary"></div>
+import os
+os.chdir('D:/Athlete_Model')
 
-<script>
-var DB=[],loaded=false;
-async function init(){
-  for(var i=0;i<10;i++){
-    var r=await fetch('data_chunks/chunk_'+i+'.txt');
-    var t=await r.text();
-    var bin=atob(t);
-    var bytes=new Uint8Array(bin.length);
-    for(var j=0;j<bin.length;j++)bytes[j]=bin.charCodeAt(j);
-    var ds=new DecompressionStream('gzip');
-    var w=ds.writable.getWriter();w.write(bytes);w.close();
-    var result=await ds.readable.getReader().read();
-    var raw=JSON.parse(new TextDecoder().decode(result.value));
-    DB=DB.concat(raw.map(function(r){return{name:r[0],cal:r[1][0],pro:r[1][1],fat:r[1][2],car:r[1][3]};}));
-    document.getElementById('status').textContent='Загружено '+DB.length+' продуктов';
-  }
-  loaded=true;
-  document.getElementById('status').textContent='✅ '+DB.length+' продуктов USDA';
-}
-init();
-function searchFood(){
-  var q=document.getElementById('search').value.toLowerCase();
-  var box=document.getElementById('box');
-  if(!q||!loaded){box.innerHTML='';return;}
-  var r=DB.filter(function(f){return f.name.toLowerCase().indexOf(q)>=0;}).slice(0,10);
-  box.innerHTML=r.map(function(f){return '<div style="padding:8px;border-bottom:1px solid #333;cursor:pointer" onclick="add(''+f.name+'')">'+f.name+' | 🔥'+f.cal+'ккал</div>';}).join('');
-}
+html = '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>Athlete Twin</title>\n</head>\n<body>\n<h2>Athlete Twin</h2>\n<p id="status">Загрузка...</p>\n<input type="text" id="search" placeholder="Поиск..." oninput="searchFood()">\n<div id="box"></div>\n<div id="diary"></div>\n<script>\nvar DB=[],loaded=false;\nasync function init(){\nfor(var i=0;i<10;i++){\nvar r=await fetch("data_chunks/chunk_"+i+".txt");\nvar t=await r.text();\nvar bin=atob(t);\nvar bytes=new Uint8Array(bin.length);\nfor(var j=0;j<bin.length;j++)bytes[j]=bin.charCodeAt(j);\nvar ds=new DecompressionStream("gzip");\nvar w=ds.writable.getWriter();w.write(bytes);w.close();\nvar result=await ds.readable.getReader().read();\nvar raw=JSON.parse(new TextDecoder().decode(result.value));\nDB=DB.concat(raw.map(function(r){return{name:r[0],cal:r[1][0],pro:r[1][1],fat:r[1][2],car:r[1][3]};}));\ndocument.getElementById("status").textContent="Загружено "+DB.length+" продуктов";\n}\nloaded=true;\ndocument.getElementById("status").textContent="✅ "+DB.length+" продуктов USDA";\n}\ninit();\nfunction searchFood(){\nvar q=document.getElementById("search").value.toLowerCase();\nvar box=document.getElementById("box");\nif(!q||!loaded){box.innerHTML="";return;}\nvar r=DB.filter(function(f){return f.name.toLowerCase().indexOf(q)>=0;}).slice(0,10);\nvar h="";\nfor(var k=0;k<r.length;k++){h+="<div onclick=\\"add(\'"+r[k].name+"\')\\" style=\\"padding:8px;border-bottom:1px solid #333;cursor:pointer\\">"+r[k].name+" | 🔥"+r[k].cal+"ккал</div>";}\nbox.innerHTML=h;\n}\nvar diary=[];\nfunction add(name){\nvar f=DB.find(function(x){return x.name===name;});\nif(!f)return;\nvar g=parseFloat(prompt("Граммы?","100"));\nif(!g)return;\ndiary.push({name:f.name,grams:g,cal:Math.round(f.cal*g/100)});\ndocument.getElementById("search").value="";\ndocument.getElementById("box").innerHTML="";\nupdateDiary();\nlocalStorage.setItem("diary",JSON.stringify(diary));\n}\nfunction updateDiary(){\nvar h="";\nfor(var i=0;i<diary.length;i++){h+="<div>"+diary[i].name+" - "+diary[i].grams+"г ("+diary[i].cal+"ккал) <span onclick=\\"del("+i+")\\" style=\\"color:red;cursor:pointer\\">✕</span></div>";}\ndocument.getElementById("diary").innerHTML=h;\n}\nfunction del(i){diary.splice(i,1);updateDiary();localStorage.setItem("diary",JSON.stringify(diary));}\nvar saved=localStorage.getItem("diary");\nif(saved){diary=JSON.parse(saved);updateDiary();}\n</script>\n</body>\n</html>'
 
-var diary=[];
-function add(name){
-  var f=DB.find(function(x){return x.name===name;});
-  if(!f)return;
-  var g=parseFloat(prompt('Граммы?','100'));
-  if(!g)return;
-  diary.push({name:f.name,grams:g,cal:Math.round(f.cal*g/100)});
-  document.getElementById('search').value='';
-  document.getElementById('box').innerHTML='';
-  updateDiary();
-  localStorage.setItem('diary',JSON.stringify(diary));
-}
+with open('index_clean.html', 'w', encoding='utf-8') as f:
+    f.write(html)
 
-function updateDiary(){
-  var d=document.getElementById('diary');
-  document.getElementById('count').textContent=diary.length;
-  d.innerHTML=diary.map(function(item,i){
-    return '<div style="padding:5px;border-bottom:1px solid #222">'+item.name+' - '+item.grams+'г ('+item.cal+'ккал) <span style="color:red;cursor:pointer" onclick="del('+i+')">✕</span></div>';
-  }).join('');
-}
-
-function del(i){diary.splice(i,1);updateDiary();localStorage.setItem('diary',JSON.stringify(diary));}
-
-// Восстановление дневника
-var saved=localStorage.getItem('diary');
-if(saved){diary=JSON.parse(saved);updateDiary();}
-</script>
-</body>
-</html>
+print(f'✅ index_clean.html создан! {os.path.getsize("index_clean.html")/1024:.0f} КБ')
