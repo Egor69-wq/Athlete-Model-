@@ -6,7 +6,7 @@
 <title>Athlete Digital Twin Pro | 458K USDA</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
-:root{--bg:#0a0a0f;--card:#12121a;--accent:#4CAF50;--text:#e0e0e0;--muted:#888;--border:#1a1a2e;--red:#ff5252;--orange:#ff9800;--purple:#7c4dff}
+:root{--bg:#0a0a0f;--card:#12121a;--accent:#4CAF50;--blue:#2196F3;--text:#e0e0e0;--muted:#888;--border:#1a1a2e;--red:#ff5252;--orange:#ff9800;--purple:#7c4dff}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,sans-serif;background:var(--bg);color:var(--text);padding-bottom:60px}
 .header{background:linear-gradient(135deg,#0a0a0f,#1a1a2e);padding:10px;text-align:center;border-bottom:2px solid var(--accent);position:sticky;top:0;z-index:100}
@@ -27,16 +27,16 @@ input:focus{border-color:var(--accent);outline:none}
 .btn-blue{background:var(--blue);color:#fff}
 .btn-purple{background:var(--purple);color:#fff}
 .hidden{display:none}
-.suggestions-box{position:fixed;top:160px;left:5px;right:5px;background:var(--card);border-radius:10px;max-height:250px;overflow-y:auto;border:1px solid var(--accent);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.8)}
-.sug-item{padding:10px;border-bottom:1px solid var(--border);cursor:pointer;font-size:11px;color:var(--text)}
+.suggestions-box{position:fixed;top:160px;left:5px;right:5px;background:var(--card);border-radius:10px;max-height:220px;overflow-y:auto;border:1px solid var(--border);z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.6)}
+.sug-item{padding:8px 10px;border-bottom:1px solid var(--border);cursor:pointer;font-size:11px}
 .sug-item:active{background:#1a1a2e}
-.sug-item .name{font-weight:600;color:#fff}
-.sug-item .meta{font-size:9px;color:var(--accent)}
+.sug-item .name{font-weight:500}
+.sug-item .meta{font-size:9px;color:var(--muted)}
 .diary-item{background:#0a0a0f;padding:6px 8px;border-radius:6px;margin-bottom:3px;display:flex;justify-content:space-between;align-items:center;font-size:11px}
 .diary-item .del{color:var(--red);cursor:pointer;font-weight:700;padding:2px 6px}
 .stat-row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border);font-size:11px}
 .stat-val{font-weight:600;color:var(--accent)}
-#viewer3D{width:100%;height:350px;background:#000;border-radius:10px;touch-action:manipulation}
+#viewer3D{width:100%;height:320px;background:#000;border-radius:10px;touch-action:manipulation}
 .slider-container{margin:4px 0}
 .slider-container label{font-size:10px;color:var(--muted);display:flex;justify-content:space-between}
 input[type=range]{width:100%;accent-color:var(--accent)}
@@ -55,7 +55,7 @@ canvas{display:block}
 </head>
 <body>
 <div class="header"><div class="title">🧬 Athlete Digital Twin Pro</div><div class="subtitle" id="status">458 452 продукта USDA</div></div>
-<divclass="tabs">
+<div class="tabs">
 <button class="tab active" onclick="switchTab('eat')">🍽 Еда</button>
 <button class="tab" onclick="switchTab('bio')">🩸 Био</button>
 <button class="tab" onclick="switchTab('sim')">📊 Сим</button>
@@ -75,8 +75,9 @@ canvas{display:block}
 <button class="btn btn-red" onclick="resetDiary()">🗑 Очистить</button></div></div>
 
 <div id="tab-bio" class="tab-content">
-<div class="card"><div class="card-title">🩸 Биомаркеры</div><div class="biomarker-grid" id="bioGrid"><div style="color:#888;text-align:center;padding:15px;font-size:11px">Введите параметры во вкладке Сим</div></div></div>
-<div class="card"><div class="card-title">🧪 Гормоны</div><div class="biomarker-grid" id="hormoneGrid"></div></div></div>
+<div class="card"><div class="card-title">🩸 Биомаркеры</div><div class="biomarker-grid" id="bioGrid"></div></div>
+<div class="card"><div class="card-title">🧪 Гормоны</div><div class="biomarker-grid" id="hormoneGrid"></div></div>
+<div class="card"><div class="card-title">📈 Динамика</div><canvas id="bioChart" width="340" height="180"></canvas></div></div>
 
 <div id="tab-sim" class="tab-content">
 <div class="card"><div class="card-title">👤 Параметры</div>
@@ -94,169 +95,64 @@ canvas{display:block}
 <div class="slider-container"><label>💪 Мышцы <span id="muscleVal">45%</span></label><input type="range" id="muscleSlider" min="20" max="70" value="45" oninput="updateBody()"></div>
 <div class="slider-container"><label>🍔 Жир <span id="fatVal">20%</span></label><input type="range" id="fatSlider" min="3" max="60" value="20" oninput="updateBody()"></div>
 <div class="slider-container"><label>👁 Кожа <span id="skinVal">80%</span></label><input type="range" id="skinSlider" min="0" max="100" value="80" oninput="updateBody()"></div>
-<div class="row"><button class="btn btn-blue" onclick="toggleLayer('skin')">🟤 Кожа</button><button class="btn btn-purple" onclick="toggleLayer('muscle')">🔴 Мышцы</button><button class="btn btn-blue" onclick="toggleLayer('bone')">⚪ Скелет</button><button class="btn btn-purple" onclick="toggleLayer('organs')">❤️ Органы</button></div></div></div>
+<div class="row"><button class="btn btn-blue" onclick="toggleLayer('skin')">🟤 Кожа</button><button class="btn btn-purple" onclick="toggleLayer('muscle')">🔴 Мышцы</button><button class="btn btn-blue" onclick="toggleLayer('bone')">⚪ Скелет</button></div></div></div>
 
 <script>
 let FOOD_DB=[],DB_LOADED=false;
-const TOTAL_CHUNKS=10;
 
+let FOOD_DB=[],DB_LOADED=false;
 async function loadChunk(i){
-  const resp=await fetch('data_chunks/chunk_'+i+'.txt');
-  const b64=await resp.text();
+  const r=await fetch('data_chunks/chunk_'+i+'.txt');
+  const b64=await r.text();
   const bin=atob(b64);
   const bytes=new Uint8Array(bin.length);
   for(let j=0;j<bin.length;j++)bytes[j]=bin.charCodeAt(j);
   const ds=new DecompressionStream('gzip');
-  const writer=ds.writable.getWriter();
-  const reader=ds.readable.getReader();
-  writer.write(bytes);
-  writer.close();
-  const result=await reader.read();
-  const text=new TextDecoder().decode(result.value);
-  const raw=JSON.parse(text);
+  const w=ds.writable.getWriter();w.write(bytes);w.close();
+  const result=await ds.readable.getReader().read();
+  const raw=JSON.parse(new TextDecoder().decode(result.value));
   return raw.map(r=>({name:r[0],cal:r[1][0],pro:r[1][1],fat:r[1][2],car:r[1][3]}));
 }
-
 async function loadAll(){
-  document.getElementById('status').textContent='Загрузка базы USDA...';
+  document.getElementById('status').textContent='Загрузка...';
   let all=[];
-  for(let i=0;i<TOTAL_CHUNKS;i++){
-    const foods=await loadChunk(i);
-    all=all.concat(foods);
+  for(let i=0;i<10;i++){
+    all=all.concat(await loadChunk(i));
     document.getElementById('status').textContent='Загружено '+all.length+' продуктов...';
   }
-  FOOD_DB=all;
-  DB_LOADED=true;
+  FOOD_DB=all;DB_LOADED=true;
   document.getElementById('status').textContent='✅ '+all.length+' продуктов USDA';
 }
 loadAll();
 
-let searchTimeout;
-function searchFood(){
-  clearTimeout(searchTimeout);
-  searchTimeout=setTimeout(()=>{
-    const q=document.getElementById('search').value.toLowerCase().trim();
-    const box=document.getElementById('suggestionsBox');
-    if(!q){box.innerHTML='';return}
-    if(!DB_LOADED){box.innerHTML='<div style="color:#888;text-align:center;padding:15px;">⏳ База загружается...</div>';return}
-    const r=FOOD_DB.filter(f=>f.name.toLowerCase().includes(q)).slice(0,20);
-    if(!r.length){box.innerHTML='<div style="color:#888;text-align:center;padding:15px;">Ничего не найдено</div>';return}
-    box.innerHTML=r.map(f=>`<div class="sug-item" onclick="addFood('${f.name.replace(/'/g,"\'")}')"><div class="name">${f.name}</div><div class="meta">🔥${f.cal}ккал | 🥩${f.pro}г | 🧈${f.fat}г | 🌾${f.car}г</div></div>`).join('');
-  },100);
-}
 
-document.addEventListener('click',function(e){if(!e.target.closest('#search')&&!e.target.closest('#suggestionsBox'))document.getElementById('suggestionsBox').innerHTML='';});
+function decompressChunk(b64){return new Promise((resolve)=>{const bin=atob(b64);const bytes=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);const ds=new DecompressionStream('gzip');const writer=ds.writable.getWriter();const reader=ds.readable.getReader();writer.write(bytes);writer.close();reader.read().then(result=>{const text=new TextDecoder().decode(result.value);const raw=JSON.parse(text);resolve(raw.map(r=>({name:r[0],cal:r[1][0],pro:r[1][1],fat:r[1][2],car:r[1][3],fiber:r[1][4],sugar:r[1][5],na:r[1][6],vc:r[1][7],vd:r[1][8],b12:r[1][9],ca:r[1][10],fe:r[1][11],k:r[1][12],chol:r[1][13],sf:r[1][14]})))})})}
+
+async function loadAll(){document.getElementById('status').textContent='Загрузка базы...';let all=[];for(let i=0;i<10;i++){const d=window['USDA_CHUNK_'+i];if(d){const f=await decompressChunk(d);all=all.concat(f);document.getElementById('status').textContent='Загружено '+all.length+' продуктов...'}}FOOD_DB=all;DB_LOADED=true;document.getElementById('status').textContent='✅ 458 452 продукта USDA'}loadAll();
+
+let searchTimeout;
+function searchFood(){clearTimeout(searchTimeout);searchTimeout=setTimeout(()=>{const q=document.getElementById('search').value.toLowerCase().trim();const box=document.getElementById('suggestionsBox');if(!q||!DB_LOADED){box.innerHTML='';return}const r=FOOD_DB.filter(f=>f.name.toLowerCase().includes(q)).slice(0,25);box.innerHTML=r.map(f=>`<div class="sug-item" onclick="addFood('${f.name.replace(/'/g,"\\'")}')"><div class="name">${f.name}</div><div class="meta">🔥${f.cal}ккал | 🥩${f.pro}г | 🧈${f.fat}г | 🌾${f.car}г</div></div>`).join('')},150)}
 
 let diary=[];
-function addFood(name){
-  const f=FOOD_DB.find(x=>x.name===name);
-  if(!f)return;
-  const g=parseFloat(prompt('Сколько грамм "'+f.name+'"?','100'));
-  if(!g||g<=0)return;
-  const r=g/100;
-  diary.push({name:f.name,grams:g,cal:Math.round(f.cal*r),pro:Math.round(f.pro*r*10)/10,fat:Math.round(f.fat*r*10)/10,car:Math.round(f.car*r*10)/10});
-  document.getElementById('search').value='';
-  document.getElementById('suggestionsBox').innerHTML='';
-  updateDiary();saveDiary();
-}
-function updateDiary(){
-  const d=document.getElementById('diary'),t=document.getElementById('totals');
-  document.getElementById('count').textContent=diary.length;
-  if(!diary.length){d.innerHTML='<div style="color:#888;text-align:center;padding:15px;">Дневник пуст</div>';t.classList.add('hidden');return}
-  t.classList.remove('hidden');
-  d.innerHTML=diary.map((item,i)=>`<div class="diary-item"><span>${item.name}</span><span>${item.grams}г | ${item.cal}ккал</span><span class="del" onclick="removeFood(${i})">✕</span></div>`).join('');
-  let tp=0,tf=0,tc=0,tcal=0;
-  diary.forEach(x=>{tp+=x.pro;tf+=x.fat;tc+=x.car;tcal+=x.cal});
-  document.getElementById('tp').textContent=Math.round(tp)+' г';
-  document.getElementById('tf').textContent=Math.round(tf)+' г';
-  document.getElementById('tc').textContent=Math.round(tc)+' г';
-  document.getElementById('tcal').textContent=Math.round(tcal)+' ккал';
-}
+function addFood(name){const f=FOOD_DB.find(x=>x.name===name);if(!f)return;const g=parseFloat(prompt('Сколько грамм "'+f.name+'"?','100'));if(!g||g<=0)return;const r=g/100;diary.push({name:f.name,grams:g,cal:Math.round(f.cal*r),pro:Math.round(f.pro*r*10)/10,fat:Math.round(f.fat*r*10)/10,car:Math.round(f.car*r*10)/10});document.getElementById('search').value='';document.getElementById('suggestionsBox').innerHTML='';updateDiary();saveDiary()}
+function updateDiary(){const d=document.getElementById('diary'),t=document.getElementById('totals');document.getElementById('count').textContent=diary.length;if(!diary.length){d.innerHTML='<div style="color:#888;text-align:center;padding:15px;">Дневник пуст</div>';t.classList.add('hidden');return}t.classList.remove('hidden');d.innerHTML=diary.map((item,i)=>`<div class="diary-item"><span>${item.name}</span><span>${item.grams}г | ${item.cal}ккал</span><span class="del" onclick="removeFood(${i})">✕</span></div>`).join('');let tp=0,tf=0,tc=0,tcal=0;diary.forEach(x=>{tp+=x.pro;tf+=x.fat;tc+=x.car;tcal+=x.cal});document.getElementById('tp').textContent=Math.round(tp)+' г';document.getElementById('tf').textContent=Math.round(tf)+' г';document.getElementById('tc').textContent=Math.round(tc)+' г';document.getElementById('tcal').textContent=Math.round(tcal)+' ккал'}
 function removeFood(i){diary.splice(i,1);updateDiary();saveDiary()}
 function resetDiary(){if(confirm('Очистить?')){diary=[];updateDiary();saveDiary()}}
 function saveDiary(){localStorage.setItem('ad_diary',JSON.stringify(diary))}
 document.addEventListener('DOMContentLoaded',()=>{const s=localStorage.getItem('ad_diary');if(s){diary=JSON.parse(s);updateDiary()}});
 
-function switchTab(t){
-  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(d=>d.classList.remove('active'));
-  document.getElementById('tab-'+t).classList.add('active');
-  event.target.classList.add('active');
-  if(t==='body')setTimeout(init3D,100);
-}
+function updateBiomarkers(){const w=parseFloat(document.getElementById('w').value)||80;const h=parseFloat(document.getElementById('h').value)||175;const age=parseInt(document.getElementById('age').value)||25;const gender=document.getElementById('gender').value;const bmi=w/((h/100)**2);const bmr=gender==='male'?10*w+6.25*h-5*age+5:10*w+6.25*h-5*age-161;const test=gender==='male'?Math.max(200,700-age*5):Math.max(15,70-age*0.5);const cortisol=400+(w-80)*5;const glucose=5.2+(w-80)*0.05;const hdl=Math.max(0.8,1.5-(w-80)*0.02);const ldl=2.5+(w-80)*0.04;const vitD=Math.max(20,60-(w-80)*0.5);const tsh=2.0+(w-80)*0.05;const iron=gender==='male'?20:15;const bio=[{name:'ИМТ',value:bmi.toFixed(1),unit:'кг/м²',status:bmi<18.5?'low':bmi>25?'high':'normal'},{name:'BMR',value:Math.round(bmr),unit:'ккал',status:'normal'},{name:'Тестостерон',value:Math.round(test),unit:'нг/дл',status:test<300?'low':'normal'},{name:'Кортизол',value:Math.round(cortisol),unit:'нмоль/л',status:cortisol>500?'high':'normal'},{name:'Глюкоза',value:glucose.toFixed(1),unit:'ммоль/л',status:glucose>5.5?'high':glucose<3.5?'low':'normal'},{name:'HDL',value:hdl.toFixed(1),unit:'ммоль/л',status:hdl<1.0?'low':'normal'},{name:'LDL',value:ldl.toFixed(1),unit:'ммоль/л',status:ldl>3.5?'high':'normal'},{name:'Витамин D',value:Math.round(vitD),unit:'нг/мл',status:vitD<30?'low':'normal'},{name:'Ферритин',value:150,unit:'нг/мл',status:'normal'},{name:'B12',value:400,unit:'пг/мл',status:'normal'},{name:'ТТГ',value:tsh.toFixed(1),unit:'мЕд/л',status:tsh>4.0?'high':'normal'},{name:'Железо',value:Math.round(iron),unit:'мкмоль/л',status:'normal'}];document.getElementById('bioGrid').innerHTML=bio.slice(0,8).map(b=>`<div class="bio-item"><div class="name">${b.name}</div><div class="value ${b.status==='normal'?'status-normal':b.status==='high'?'status-danger':'status-warn'}">${b.value} ${b.unit}</div><div class="status ${b.status==='normal'?'status-normal':b.status==='high'?'status-danger':'status-warn'}">${b.status==='normal'?'✅ Норма':'⚠'}</div></div>`).join('');document.getElementById('hormoneGrid').innerHTML=bio.slice(8).map(b=>`<div class="bio-item"><div class="name">${b.name}</div><div class="value ${b.status==='normal'?'status-normal':'status-danger'}">${b.value} ${b.unit}</div><div class="status ${b.status==='normal'?'status-normal':'status-danger'}">${b.status==='normal'?'✅ Норма':'⚠'}</div></div>`).join('')}
 
-function runSim(){
-  const w=parseFloat(document.getElementById('w').value)||80;
-  const h=parseFloat(document.getElementById('h').value)||175;
-  const age=parseInt(document.getElementById('age').value)||25;
-  const gender=document.getElementById('gender').value;
-  const act=parseFloat(document.getElementById('activity').value)||1.55;
-  let bmr=gender==='male'?10*w+6.25*h-5*age+5:10*w+6.25*h-5*age-161;
-  const tdee=bmr*act;
-  let tcal=0;diary.forEach(x=>tcal+=x.cal||0);
-  const days=90;let weight=w;const pts=[];
-  for(let d=0;d<days;d++){weight+=(tcal-tdee)/7700;weight=Math.max(w*0.7,Math.min(w*1.3,weight));pts.push({day:d+1,weight})}
-  const canvas=document.getElementById('chart'),ctx=canvas.getContext('2d');
-  ctx.clearRect(0,0,340,180);ctx.fillStyle='#0a0a0f';ctx.fillRect(0,0,340,180);
-  const maxW=Math.max(...pts.map(p=>p.weight))*1.05,minW=Math.min(...pts.map(p=>p.weight))*0.95;
-  ctx.strokeStyle='#4CAF50';ctx.lineWidth=3;ctx.beginPath();
-  pts.forEach((p,i)=>{const x=20+300*i/(pts.length-1),y=160-140*(p.weight-minW)/(maxW-minW);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y)});ctx.stroke();
-  const last=pts[pts.length-1];
-  document.getElementById('simStats').innerHTML=`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px"><span>Вес через ${days} дн.</span><span style="color:#4CAF50;font-weight:600">${last.weight.toFixed(1)} кг</span></div><div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px"><span>Δ</span><span style="color:${last.weight>w?'#4CAF50':'#ff5252'}">${(last.weight-w)>0?'+':''}${(last.weight-w).toFixed(1)} кг</span></div>`;
-  document.getElementById('simResult').classList.remove('hidden');
-}
+function switchTab(t){document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.tab-content').forEach(d=>d.classList.remove('active'));document.getElementById('tab-'+t).classList.add('active');event.target.classList.add('active');if(t==='body')setTimeout(init3D,100);if(t==='bio'||t==='sim')updateBiomarkers()}
+
+function runSim(){updateBiomarkers();const w=parseFloat(document.getElementById('w').value)||80;const h=parseFloat(document.getElementById('h').value)||175;const age=parseInt(document.getElementById('age').value)||25;const gender=document.getElementById('gender').value;const act=parseFloat(document.getElementById('activity').value)||1.55;let bmr=gender==='male'?10*w+6.25*h-5*age+5:10*w+6.25*h-5*age-161;const tdee=bmr*act;let tcal=0;diary.forEach(x=>tcal+=x.cal||0);const days=90;let weight=w;const pts=[];for(let d=0;d<days;d++){weight+=(tcal-tdee)/7700;weight=Math.max(w*0.7,Math.min(w*1.3,weight));pts.push({day:d+1,weight})}const canvas=document.getElementById('chart'),ctx=canvas.getContext('2d');ctx.clearRect(0,0,340,180);ctx.fillStyle='#0a0a0f';ctx.fillRect(0,0,340,180);const maxW=Math.max(...pts.map(p=>p.weight))*1.05,minW=Math.min(...pts.map(p=>p.weight))*0.95;ctx.strokeStyle='#4CAF50';ctx.lineWidth=2;ctx.beginPath();pts.forEach((p,i)=>{const x=20+300*i/(pts.length-1),y=160-140*(p.weight-minW)/(maxW-minW);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y)});ctx.stroke();const last=pts[pts.length-1];document.getElementById('simStats').innerHTML=`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px"><span>Вес через ${days} дн.</span><span style="color:#4CAF50;font-weight:600">${last.weight.toFixed(1)} кг</span></div><div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px"><span>Δ</span><span style="color:${last.weight>w?'#4CAF50':'#ff5252'}">${(last.weight-w)>0?'+':''}${(last.weight-w).toFixed(1)} кг</span></div>`;document.getElementById('simResult').classList.remove('hidden')}
 
 let scene,camera,renderer,humanMesh,currentLayer='all';
-function init3D(){
-  if(scene)return;
-  const c=document.getElementById('viewer3D'),w=c.offsetWidth,h=c.offsetHeight;
-  scene=new THREE.Scene();scene.background=new THREE.Color(0x0a0a0f);
-  camera=new THREE.PerspectiveCamera(45,w/h,0.1,100);camera.position.set(0,1.5,5);camera.lookAt(0,0.3,0);
-  renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(w,h);c.appendChild(renderer.domElement);
-  scene.add(new THREE.AmbientLight(0x444455,0.7));
-  scene.add(new THREE.DirectionalLight(0xffffff,1)).position.set(3,5,3);
-  createHuman();animate3D();
-}
-function createHuman(){
-  humanMesh=new THREE.Group();
-  const bm=new THREE.MeshPhongMaterial({color:0xeeeedd});
-  const mm=new THREE.MeshPhongMaterial({color:0xcc3333,transparent:true,opacity:0.7});
-  const fm=new THREE.MeshPhongMaterial({color:0xffdd88,transparent:true,opacity:0.35});
-  const sm=new THREE.MeshPhongMaterial({color:0xffcc99,transparent:true,opacity:0.85});
-
-  const skull=new THREE.Mesh(new THREE.SphereGeometry(0.28,24,24),bm);skull.position.y=1.35;skull.name='bone';humanMesh.add(skull);
-  for(let i=0;i<7;i++){const rib=new THREE.Mesh(new THREE.TorusGeometry(0.45-i*0.02,0.03,8,10,Math.PI),bm);rib.position.y=0.6-i*0.11;rib.rotation.z=Math.PI/2;rib.name='bone';humanMesh.add(rib)}
-  for(let s of[-1,1]){const ab=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.06,0.8,8),bm);ab.position.set(s*0.55,0.4,0);ab.name='bone';humanMesh.add(ab);const lb=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.08,1.2,8),bm);lb.position.set(s*0.2,-0.9,0);lb.name='bone';humanMesh.add(lb)}
-
-  const tm=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.4,1.6,20),mm);tm.position.y=0.15;tm.name='muscle';humanMesh.add(tm);
-  for(let s of[-1,1]){const am=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.11,0.8,10),mm);am.position.set(s*0.6,0.2,0);am.name='muscle';humanMesh.add(am);const lm=new THREE.Mesh(new THREE.CylinderGeometry(0.14,0.16,1.2,10),mm);lm.position.set(s*0.22,-1.1,0);lm.name='muscle';humanMesh.add(lm)}
-
-  const belly=new THREE.Mesh(new THREE.SphereGeometry(0.3,16,12),fm);belly.position.set(0,0.1,0.1);belly.scale.set(1,0.8,0.6);belly.name='fat';humanMesh.add(belly);
-
-  const bodySkin=new THREE.Mesh(new THREE.CylinderGeometry(0.52,0.45,1.7,26),sm);bodySkin.position.y=0.15;bodySkin.name='skin';humanMesh.add(bodySkin);
-  const headSkin=new THREE.Mesh(new THREE.SphereGeometry(0.29,26,26),sm);headSkin.position.y=1.35;headSkin.name='skin';humanMesh.add(headSkin);
-  for(let s of[-1,1]){const a=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.11,1,14),sm);a.position.set(s*0.6,0.2,0);a.name='skin';humanMesh.add(a);const l=new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.17,1.35,14),sm);l.position.set(s*0.22,-1.15,0);l.name='skin';humanMesh.add(l)}
-
-  const heart=new THREE.Mesh(new THREE.SphereGeometry(0.1,10,10),new THREE.MeshPhongMaterial({color:0xff0000,emissive:0x330000}));heart.position.set(0.1,0.5,0.22);heart.name='organ';humanMesh.add(heart);
-  scene.add(humanMesh);
-}
-function animate3D(){requestAnimationFrame(animate3D);if(humanMesh)humanMesh.rotation.y+=0.003;if(renderer)renderer.render(scene,camera)}
-function updateBody(){
-  const m=parseInt(document.getElementById('muscleSlider').value);
-  const f=parseInt(document.getElementById('fatSlider').value);
-  const s=parseInt(document.getElementById('skinSlider').value)/100;
-  document.getElementById('muscleVal').textContent=m+'%';
-  document.getElementById('fatVal').textContent=f+'%';
-  document.getElementById('skinVal').textContent=Math.round(s*100)+'%';
-  if(humanMesh)humanMesh.children.forEach(c=>{
-    if(c.name==='muscle'){const sc=1+(m-45)*0.01;c.scale.set(sc,sc,sc);c.material.opacity=currentLayer==='muscle'||currentLayer==='all'?0.5+(m-20)*0.015:0}
-    if(c.name==='fat'){const sc=1+(f-20)*0.012;c.scale.set(sc,sc,sc);c.material.opacity=currentLayer==='fat'||currentLayer==='all'?0.2+(f-3)*0.01:0}
-    if(c.name==='skin')c.material.opacity=currentLayer==='skin'||currentLayer==='all'?s:0.1;
-    if(c.name==='bone')c.material.opacity=currentLayer==='bone'||currentLayer==='all'?1:0.1;
-    if(c.name==='organ')c.material.opacity=currentLayer==='organs'||currentLayer==='all'?1:0;
-  });
-}
-function toggleLayer(l){currentLayer=currentLayer===l?'all':l;updateBody()}
+function init3D(){if(scene)return;const c=document.getElementById('viewer3D'),w=c.offsetWidth,h=c.offsetHeight;scene=new THREE.Scene();scene.background=new THREE.Color(0x0a0a0f);camera=new THREE.PerspectiveCamera(45,w/h,0.1,100);camera.position.set(0,1.4,4.5);camera.lookAt(0,0.3,0);renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(w,h);renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));c.appendChild(renderer.domElement);scene.add(new THREE.AmbientLight(0x333344,0.6));const l1=new THREE.DirectionalLight(0xffffff,1);l1.position.set(3,5,3);scene.add(l1);const l2=new THREE.DirectionalLight(0x4488ff,0.5);l2.position.set(-3,2,-1);scene.add(l2);createHuman();animate3D()}
+function createHuman(){humanMesh=new THREE.Group();const bm=new THREE.MeshPhongMaterial({color:0xeeeeee});const mm=new THREE.MeshPhongMaterial({color:0xcc3333,transparent:true,opacity:0.6});const fm=new THREE.MeshPhongMaterial({color:0xffcc66,transparent:true,opacity:0.3});const sm=new THREE.MeshPhongMaterial({color:0xffcc99,transparent:true,opacity:0.85});const spine=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.08,1.5,8),bm);spine.position.y=0.1;spine.name='bone';humanMesh.add(spine);for(let i=0;i<6;i++){const rib=new THREE.Mesh(new THREE.TorusGeometry(0.45,0.03,8,8,Math.PI),bm);rib.position.y=0.2+i*0.16;rib.rotation.z=Math.PI/2;rib.name='bone';humanMesh.add(rib)}const skull=new THREE.Mesh(new THREE.SphereGeometry(0.26,16,16),bm);skull.position.y=1.3;skull.name='bone';humanMesh.add(skull);for(let s of[-1,1]){const ab=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.05,0.9,8),bm);ab.position.set(s*0.6,0.35,0);ab.name='bone';humanMesh.add(ab);const lb=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.07,1.3,8),bm);lb.position.set(s*0.2,-1,0);lb.name='bone';humanMesh.add(lb)}const tm=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.42,1.6,20),mm);tm.position.y=0.12;tm.name='muscle';humanMesh.add(tm);for(let s of[-1,1]){const am=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.11,0.9,10),mm);am.position.set(s*0.6,0.3,0);am.name='muscle';humanMesh.add(am);const lm=new THREE.Mesh(new THREE.CylinderGeometry(0.13,0.15,1.3,10),mm);lm.position.set(s*0.2,-1.05,0);lm.name='muscle';humanMesh.add(lm)}const tf=new THREE.Mesh(new THREE.CylinderGeometry(0.56,0.47,1.7,18),fm);tf.position.y=0.12;tf.name='fat';humanMesh.add(tf);const torso=new THREE.Mesh(new THREE.CylinderGeometry(0.56,0.47,1.7,26),sm);torso.position.y=0.12;torso.name='skin';humanMesh.add(torso);const head=new THREE.Mesh(new THREE.SphereGeometry(0.28,26,26),sm);head.position.y=1.3;head.name='skin';humanMesh.add(head);for(let s of[-1,1]){const a=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.12,1,12),sm);a.position.set(s*0.6,0.3,0);a.name='skin';humanMesh.add(a);const l=new THREE.Mesh(new THREE.CylinderGeometry(0.14,0.16,1.35,12),sm);l.position.set(s*0.2,-1.05,0);l.name='skin';humanMesh.add(l)}const heart=new THREE.Mesh(new THREE.SphereGeometry(0.1,10,10),new THREE.MeshPhongMaterial({color:0xff0000,emissive:0x330000}));heart.position.set(0.12,0.45,0.25);heart.name='organ';humanMesh.add(heart);const liver=new THREE.Mesh(new THREE.BoxGeometry(0.22,0.13,0.1),new THREE.MeshPhongMaterial({color:0x8b0000}));liver.position.set(-0.18,0.35,0.22);liver.name='organ';humanMesh.add(liver);scene.add(humanMesh)}
+function animate3D(){requestAnimationFrame(animate3D);if(humanMesh)humanMesh.rotation.y+=0.004;if(renderer)renderer.render(scene,camera)}
+function updateBody(){const m=parseInt(document.getElementById('muscleSlider').value);const f=parseInt(document.getElementById('fatSlider').value);const s=parseInt(document.getElementById('skinSlider').value)/100;document.getElementById('muscleVal').textContent=m+'%';document.getElementById('fatVal').textContent=f+'%';document.getElementById('skinVal').textContent=Math.round(s*100)+'%';if(humanMesh)humanMesh.children.forEach(c=>{if(c.name==='muscle'){const sc=1+(m-45)*0.008;c.scale.set(sc,sc,sc);c.material.opacity=currentLayer==='muscle'?0.8:0.3+(m-20)*0.015}if(c.name==='fat'){const sc=1+(f-20)*0.01;c.scale.set(sc,sc,sc);c.material.opacity=currentLayer==='fat'?0.6:0.1+(f-3)*0.008}if(c.name==='skin')c.material.opacity=currentLayer==='skin'?0.95:s;if(c.name==='bone')c.visible=currentLayer==='bone'||currentLayer==='all'})}
+function toggleLayer(l){currentLayer=l;updateBody()}
 </script>
 </body>
 </html>
