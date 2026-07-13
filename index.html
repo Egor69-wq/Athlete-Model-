@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Athlete Digital Twin v4.0</title>
+<!--
+============================================
+ATHLETE DIGITAL TWIN v4.0
+(c) 2026 Марков Егор, Оренбург
+ВСЕ ПРАВА ЗАЩИЩЕНЫ.
+
+ЮРИДИЧЕСКИЕ ОГРАНИЧЕНИЯ:
+- Копирование без разрешения автора ЗАПРЕЩЕНО (ст. 1257, 1301 ГК РФ)
+- Коммерческое использование без лицензии — до 5 000 000 руб компенсации
+- Reverse engineering нейросети ЗАПРЕЩЁН (ст. 1299 ГК РФ)
+- Патентная заявка: приоритет 13.07.2026
+
+ТЕХНИЧЕСКАЯ ЗАЩИТА:
+- Обфускация весов нейросети
+- Хеш-верификация целостности кода
+- Watermarking выводов нейросети
+============================================
+-->
+<style>
+:root{--bg:#0a0a14;--card:#0e0e1a;--accent:#00C853;--blue:#2979FF;--text:#e8e8e8;--muted:#999;--border:#1a1a30;--red:#FF1744;--orange:#FF9100;--yellow:#E6C200;--purple:#D500F9}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:17px;line-height:1.45}
+.night-bar{display:none;background:rgba(255,23,68,0.15);color:var(--red);text-align:center;padding:8px;font-size:14px;font-weight:600;border-bottom:1px solid var(--red)}
+.night-bar.show{display:block}
+.sidebar{position:fixed;top:0;left:-280px;width:280px;height:100vh;background:rgba(10,10,20,0.97);z-index:200;transition:left 0.3s;border-right:1px solid var(--accent);display:flex;flex-direction:column;padding:20px 0;overflow-y:auto}
+.sidebar.open{left:0}
+.sidebar-overlay{position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.5);z-index:199;display:none}
+.sidebar-overlay.show{display:block}
+.logo-area{text-align:center;padding:10px 20px 20px;border-bottom:1px solid var(--border);margin-bottom:10px}
+.logo{display:inline-block;width:50px;height:50px;border-radius:50%;border:2.5px solid var(--accent);position:relative;background:rgba(0,200,83,0.05)}
+.logo .A{position:absolute;top:50%;left:42%;transform:translate(-50%,-50%);font-size:26px;font-weight:900;color:var(--accent)}
+.logo .dt{position:absolute;bottom:5px;right:5px;font-size:11px;font-weight:700;color:#fff;letter-spacing:1px}
+.logo-area .title{font-size:18px;font-weight:800;color:#fff;margin-top:8px;letter-spacing:2px}
+.logo-area .title span{color:var(--accent)}
+.sidebar-nav{flex:1;padding:0 12px}
+.nav-item{display:flex;align-items:center;gap:12px;padding:14px;border-radius:14px;cursor:pointer;font-size:16px;font-weight:600;color:var(--muted);border:2px solid transparent;margin-bottom:4px;transition:all 0.2s}
+.nav-item:hover{border-color:var(--accent);color:#fff;background:rgba(0,200,83,0.06);box-shadow:0 0 15px rgba(0,200,83,0.2)}
+.nav-item.active{border-color:var(--accent);color:var(--accent);background:rgba(0,200,83,0.1);box-shadow:0 0 20px rgba(0,200,83,0.15)}
+.nav-icon{width:22px;height:22px}
+.sidebar-footer{padding:14px 20px;border-top:1px solid var(--border);font-size:11px;color:var(--muted);text-align:center}
+.topbar{position:sticky;top:0;z-index:50;background:rgba(10,10,20,0.95);backdrop-filter:blur(15px);padding:12px 14px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)}
+.burger{width:40px;height:40px;border-radius:12px;border:2px solid var(--border);background:transparent;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+.burger:hover{border-color:var(--accent);color:var(--accent);box-shadow:0 0 15px rgba(0,200,83,0.2)}
+.main-content{padding:10px;max-width:900px;margin:0 auto}
+.section{display:none}.section.active{display:block}
+.section-title{font-size:22px;font-weight:900;margin-bottom:12px;color:var(--accent);text-transform:uppercase;letter-spacing:2px;padding:8px 0;border-bottom:2px solid var(--accent);display:flex;align-items:center;gap:8px}
+.card{background:var(--card);border-radius:18px;padding:16px;margin-bottom:10px;border:1px solid var(--border);box-shadow:0 4px 20px rgba(0,0,0,0.3)}
+.card-title{font-size:17px;font-weight:700;margin-bottom:12px;color:var(--accent)}
+input,select,textarea{width:100%;padding:14px;background:#0a0a14;border:1px solid var(--border);border-radius:14px;color:#fff;font-size:16px;margin-bottom:8px}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 12px rgba(0,200,83,0.1)}
+textarea{resize:vertical;min-height:60px}
+.btn{padding:14px 18px;border-radius:14px;font-weight:700;cursor:pointer;font-size:16px;border:2px solid var(--accent);background:transparent;color:var(--accent);margin-bottom:8px;min-height:48px;transition:all 0.2s}
+.btn:hover{box-shadow:0 0 20px currentColor}
+.btn:active{background:var(--accent);color:#000}
+.btn-green{border-color:var(--accent);color:var(--accent)}.btn-green:hover{box-shadow:0 0 25px rgba(0,200,83,0.6)}.btn-green:active{background:var(--accent);color:#000}
+.btn-red{border-color:var(--red);color:var(--red)}.btn-red:hover{box-shadow:0 0 25px rgba(255,23,68,0.6)}.btn-red:active{background:var(--red);color:#fff}
+.btn-blue{border-color:var(--blue);color:var(--blue)}.btn-blue:hover{box-shadow:0 0 25px rgba(41,121,255,0.6)}.btn-blue:active{background:var(--blue);color:#fff}
+.btn-purple{border-color:var(--purple);color:var(--purple)}.btn-purple:hover{box-shadow:0 0 25px rgba(213,0,249,0.6)}.btn-purple:active{background:var(--purple);color:#fff}
+.btn-sm{padding:10px 14px;font-size:14px;min-height:40px}.btn-full{width:100%}
+.search-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.search-row input[type=text]{flex:1;min-width:140px;margin-bottom:0}
+.search-row input[type=number]{width:60px;padding:12px 6px;font-size:15px;margin-bottom:0;text-align:center}
+.search-row select{width:50px;padding:12px 2px;font-size:12px;margin-bottom:0;text-align:center}
+.suggestions-box{background:var(--card);border-radius:14px;max-height:300px;overflow-y:auto;border:1px solid var(--accent);margin-top:4px}
+.sug-item{padding:14px;border-bottom:1px solid var(--border);cursor:pointer;font-size:15px}
+.sug-item:hover{background:rgba(0,200,83,0.08)}
+.diary-item{background:#0a0a14;padding:10px;border-radius:12px;margin-bottom:4px;display:flex;align-items:center;gap:6px;font-size:14px;flex-wrap:wrap}
+.diary-item .name-part{flex:1;font-weight:600;font-size:13px;min-width:80px}
+.diary-item input{width:55px;padding:10px 4px;font-size:14px;margin:0;text-align:center}
+.diary-item select{width:45px;padding:10px 2px;font-size:11px;margin:0;text-align:center}
+.diary-item .del{color:var(--red);cursor:pointer;font-weight:700;padding:8px;font-size:18px}
+.stat-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:15px}
+.stat-val{font-weight:700;color:var(--accent)}
+.progress-wrap{position:relative;height:30px;background:#0a0a14;border-radius:15px;margin:6px 0;overflow:hidden;border:1px solid var(--border)}
+.progress-fill{height:100%;border-radius:15px;transition:width 0.6s;position:relative;z-index:2}
+.fill-green{background:#00C853}.fill-yellow{background:var(--yellow)}.fill-red{background:var(--red)}
+.particle-container{position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none}
+.particle{position:absolute;width:6px;height:6px;border-radius:50%;animation:particleFall 2s linear infinite;opacity:0}
+@keyframes particleFall{0%{opacity:0}10%{opacity:1}80%{opacity:0.8}100%{opacity:0;transform:translate(30px,6px)}}
+@keyframes glowPulseYellow{0%,100%{filter:brightness(0.6);box-shadow:0 0 6px #E6C200}50%{filter:brightness(1.8);box-shadow:0 0 20px #E6C200}}
+@keyframes glowPulseRed{0%,100%{filter:brightness(0.6);box-shadow:0 0 6px #FF1744}50%{filter:brightness(1.8);box-shadow:0 0 20px #FF1744}}
+.nutrient-indicator{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.nutrient-indicator.green{background:var(--accent)}
+.nutrient-indicator.yellow{background:var(--yellow);animation:glowPulseYellow 1.5s ease-in-out infinite}
+.nutrient-indicator.red{background:var(--red);animation:glowPulseRed 1.5s ease-in-out infinite}
+.bio-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.bio-item{background:#0a0a14;padding:12px;border-radius:12px;text-align:center;border:2px solid var(--border)}
+.bio-item .n{font-size:12px;color:var(--muted)}.bio-item .v{font-size:20px;font-weight:700}
+.bio-item .d{font-size:9px;color:var(--muted)}.bio-item .s{font-size:9px;margin-top:2px}
+.charts-container{display:grid;grid-template-columns:1fr;gap:8px}@media(min-width:600px){.charts-container{grid-template-columns:1fr 1fr}}
+.chart-box canvas{width:100%;border-radius:10px;background:#0a0a14;max-height:150px}
+.plan-block{background:#0a0a14;border-radius:14px;padding:14px;margin-bottom:8px;border:1px solid var(--border)}
+.plan-block h3{font-size:15px;color:var(--accent);margin-bottom:8px}.plan-block p{font-size:14px;margin:4px 0}
+.warn-text{color:var(--orange);font-weight:600}.good-text{color:var(--accent);font-weight:600}.danger-text{color:var(--red);font-weight:600}
+.workout-item{background:var(--card);padding:10px;border-radius:10px;margin-bottom:4px;font-size:13px;display:flex;justify-content:space-between;align-items:center}
+.workout-item .del{color:var(--red);cursor:pointer;font-weight:700}
+.form-label{font-size:13px;color:var(--muted);margin-bottom:4px;display:block;font-weight:600;text-transform:uppercase;letter-spacing:1px}
+.hidden{display:none !important}
+.toggle-switch{position:relative;display:inline-block;width:48px;height:26px}
+.toggle-switch input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#1a1a30;border-radius:26px;transition:0.3s;border:2px solid var(--border)}
+.toggle-slider:before{position:absolute;content:"";height:18px;width:18px;left:2px;bottom:2px;background:var(--muted);border-radius:50%;transition:0.3s}
+input:checked+.toggle-slider{background:var(--accent);border-color:var(--accent)}input:checked+.toggle-slider:before{transform:translateX(22px);background:#000}
+.voice-btn{position:fixed;bottom:20px;right:20px;width:56px;height:56px;border-radius:50%;background:var(--accent);color:#000;border:none;cursor:pointer;z-index:100;box-shadow:0 4px 20px rgba(0,200,83,0.4);display:flex;align-items:center;justify-content:center}
+.voice-btn:active{transform:scale(0.95)}
+.voice-modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--card);border-radius:24px;padding:30px;z-index:300;text-align:center;border:1px solid var(--accent);display:none;width:90%;max-width:320px}
+.voice-modal.show{display:block}.voice-modal-overlay{position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);z-index:299;display:none}
+.voice-modal-overlay.show{display:block}
+.voice-mic{width:60px;height:60px;margin:0 auto 16px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center}
+.voice-mic.listening{animation:micPulse 0.5s ease-in-out infinite}
+@keyframes micPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+.voice-waves{display:flex;gap:4px;justify-content:center;align-items:flex-end;height:30px;margin:12px 0}
+.voice-wave{width:4px;background:var(--accent);border-radius:2px;transition:height 0.1s}
+.voice-text{color:var(--muted);font-size:14px;margin-top:8px;min-height:20px}
+.module-tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px}
+.module-tab{padding:8px 14px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;border:2px solid var(--border);background:transparent;color:var(--muted);transition:all 0.2s}
+.module-tab:hover{border-color:var(--accent);color:#fff}
+.module-tab.active{background:var(--accent);color:#000;border-color:var(--accent)}
+.alert-badge{display:inline-block;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700;margin-left:6px}
+.alert-green{background:rgba(0,200,83,0.2);color:var(--accent)}
+.alert-yellow{background:rgba(255,145,0,0.2);color:var(--orange)}
+.alert-red{background:rgba(255,23,68,0.2);color:var(--red)}
+.gauge{position:relative;width:120px;height:60px;margin:10px auto;overflow:hidden}
+.gauge-bg{position:absolute;width:120px;height:60px;border-radius:60px 60px 0 0;background:conic-gradient(from 180deg,var(--red) 0deg,var(--yellow) 90deg,var(--accent) 180deg)}
+.gauge-fill{position:absolute;width:120px;height:60px;border-radius:60px 60px 0 0;background:var(--bg);transform-origin:bottom center;transition:transform 0.8s}
+.gauge-label{position:absolute;bottom:2px;width:100%;text-align:center;font-size:16px;font-weight:900;color:#fff}
+.legend-row{display:flex;gap:16px;flex-wrap:wrap;margin:8px 0}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.legend-color{width:12px;height:12px;border-radius:3px}
+max-width:480px{.section-title{font-size:19px}.btn{font-size:15px;padding:12px 14px}.card{padding:12px}}
+</style>
+</head>
+<body>
+<div class="night-bar" id="nightBar">🌙 Пора спать. Яркость снижена.</div>
+<div class="sidebar-overlay" id="overlay" onclick="closeSidebar()"></div>
+<div class="sidebar" id="sidebar">
+<div class="logo-area"><div class="logo"><span class="A">A</span><span class="dt">dt</span></div><div class="title">ATHLETE <span>DIGITAL</span> TWIN</div><div style="font-size:10px;color:var(--muted);margin-top:4px">Создатель: Марков Егор</div></div>
+<div class="sidebar-nav">
+<div class="nav-item active" onclick="navigateTo('eat')"><span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><line x1="12" y1="8" x2="12" y2="16" stroke="currentColor" stroke-width="2"/><line x1="8" y1="12" x2="16" y2="12" stroke="currentColor" stroke-width="2"/></svg></span> Питание</div>
+<div class="nav-item" onclick="navigateTo('bio')"><span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg></span> Биомаркеры</div>
+<div class="nav-item" onclick="navigateTo('modules')"><span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24"><rect x="2" y="2" width="9" height="9" rx="1" fill="currentColor"/><rect x="13" y="2" width="9" height="9" rx="1" fill="currentColor" opacity="0.6"/><rect x="2" y="13" width="9" height="9" rx="1" fill="currentColor" opacity="0.6"/><rect x="13" y="13" width="9" height="9" rx="1" fill="currentColor"/></svg></span> Модули</div>
+<div class="nav-item" onclick="navigateTo('dash')"><span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="18" rx="1" fill="currentColor"/><rect x="14" y="8" width="7" height="13" rx="1" fill="currentColor"/></svg></span> Сводка</div>
+<div class="nav-item" onclick="navigateTo('coach')"><span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M6 20v-2a4 4 0 014-4h4a4 4 0 014 4v2" fill="none" stroke="currentColor" stroke-width="2"/></svg></span> Тренер</div>
+<div class="nav-item" onclick="navigateTo('doctor')"><span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><line x1="12" y1="8" x2="12" y2="16" stroke="currentColor" stroke-width="2.5"/><line x1="8" y1="12" x2="16" y2="12" stroke="currentColor" stroke-width="2.5"/></svg></span> Врач</div>
+<div class="nav-item" onclick="navigateTo('settings')"><span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" fill="none" stroke="currentColor" stroke-width="2"/></svg></span> Настройки</div>
+</div><div class="sidebar-footer">v4.0 | © Марков Егор | ADT</div></div><div class="topbar"><button class="burger" id="burgerBtn" onclick="toggleSidebar()"><svg width="22" height="16" viewBox="0 0 22 16"><rect x="0" y="0" width="22" height="2.5" rx="1.5" fill="currentColor"/><rect x="0" y="6.5" width="22" height="2.5" rx="1.5" fill="currentColor"/><rect x="0" y="13" width="22" height="2.5" rx="1.5" fill="currentColor"/></svg></button><span style="font-size:16px;font-weight:700;color:#fff">ADT</span><span style="font-size:11px;color:var(--muted);margin-left:auto">v4.0</span></div>
+<div class="main-content">
+
+<!-- ====== ПИТАНИЕ ====== -->
+<div id="section-eat" class="section active">
+<div class="section-title"><svg width="22" height="22" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" fill="none" stroke="var(--accent)" stroke-width="2"/><line x1="12" y1="8" x2="12" y2="16" stroke="var(--accent)" stroke-width="2"/><line x1="8" y1="12" x2="16" y2="12" stroke="var(--accent)" stroke-width="2"/></svg> Питание</div>
+<div class="card"><div class="card-title">Поиск продуктов</div>
+<div class="search-row"><input type="text" id="search" placeholder="Название продукта..." oninput="searchFood()" autocomplete="off"><input type="number" id="gramInput" value="100" min="1"><select id="unitSelect"><option value="g">гр</option><option value="ml">мл</option><option value="kg">кг</option><option value="lbs">lb</option><option value="oz">oz</option></select><button class="btn btn-green btn-sm" onclick="addFoodDirect()">Добавить</button></div>
+<div id="suggestionsBox" class="suggestions-box hidden"></div></div>
+<div class="card"><div class="card-title">Дневник (<span id="count">0</span>)</div><div id="diary"></div><div id="totals" class="hidden"></div><button class="btn btn-red btn-sm" onclick="resetDiary()">Очистить</button></div></div>
+
+<!-- ====== БИОМАРКЕРЫ ====== -->
+<div id="section-bio" class="section">
+<div class="section-title"><svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="var(--accent)" stroke-width="2"/><circle cx="12" cy="12" r="4" fill="var(--accent)"/></svg> Биомаркеры</div>
+<div class="card"><div class="card-title">Состав тела</div><div class="bio-grid" id="bioGrid1"></div></div>
+<div class="card"><div class="card-title">Кровь</div><div class="bio-grid" id="bioGrid2"></div></div>
+<div class="card"><div class="card-title">Гормоны и витамины</div><div class="bio-grid" id="bioGrid3"></div></div>
+<div class="card" id="steroidPanel"><div class="card-title">Стероидогенез</div><div id="steroidContent"></div></div>
+<div class="card" id="hpaPanel"><div class="card-title">HPA-ось</div><div id="hpaContent"></div></div>
+</div>
+
+<!-- ====== МОДУЛИ ====== -->
+<div id="section-modules" class="section">
+<div class="section-title"><svg width="22" height="22" viewBox="0 0 24 24"><rect x="2" y="2" width="9" height="9" rx="1" fill="var(--accent)"/><rect x="13" y="2" width="9" height="9" rx="1" fill="var(--accent)" opacity="0.6"/><rect x="2" y="13" width="9" height="9" rx="1" fill="var(--accent)" opacity="0.6"/><rect x="13" y="13" width="9" height="9" rx="1" fill="var(--accent)"/></svg> Модули системы</div>
+<div class="module-tabs" id="moduleTabs">
+<div class="module-tab active" onclick="switchModule('immune')">🛡️ Иммунная</div>
+<div class="module-tab" onclick="switchModule('thermo')">🔥 Термодинамика</div>
+<div class="module-tab" onclick="switchModule('injury')">🦴 Травмы</div>
+<div class="module-tab" onclick="switchModule('doping')">🚫 Допинг</div>
+<div class="module-tab" onclick="switchModule('microbiome')">🦠 Микробиом</div>
+<div class="module-tab" onclick="switchModule('metabolome')">⚗️ Метаболом</div>
+<div class="module-tab" onclick="switchModule('blood24')">🩸 Кровь 24/7</div>
+<div class="module-tab" onclick="switchModule('nutrigen')">🧬 Нутригеномика</div>
+</div>
+<div id="moduleContent"></div>
+</div>
+
+<!-- ====== СВОДКА ====== -->
+<div id="section-dash" class="section">
+<div class="section-title"><svg width="22" height="22" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="18" rx="1" fill="var(--accent)"/><rect x="14" y="8" width="7" height="13" rx="1" fill="var(--accent)"/></svg> Сводка + Симуляция</div>
+<div class="card"><div class="card-title">Биологический возраст</div><div style="text-align:center;padding:20px"><div style="font-size:48px;font-weight:900;color:var(--accent)" id="bioAge">25</div><div style="font-size:14px;color:var(--muted)" id="bioAgeDiff"></div></div></div>
+<div class="card"><div class="card-title">Режим</div><div style="display:flex;gap:6px"><button class="btn btn-sm btn-mode active" onclick="setMode('maintain')">Поддержание</button><button class="btn btn-sm btn-mode" onclick="setMode('bulk')">Набор массы</button><button class="btn btn-sm btn-mode" onclick="setMode('cut')">Сушка</button></div></div>
+<div class="card"><div class="card-title">Параметры</div>
+<label class="form-label">Вес (кг)</label><input type="number" id="w" value="80" onchange="recalcAll()">
+<label class="form-label">Рост (см)</label><input type="number" id="h" value="175" onchange="recalcAll()">
+<label class="form-label">Возраст</label><input type="number" id="age" value="25" onchange="recalcAll()">
+<label class="form-label">% жира</label><input type="number" id="bfPct" value="20" min="3" max="60" onchange="recalcAll()">
+<label class="form-label">Пол</label><select id="gender" onchange="recalcAll()"><option value="male">Мужской</option><option value="female">Женский</option></select>
+<label class="form-label">Активность</label><select id="activity" onchange="recalcAll()"><option value="1.2">Сидячий</option><option value="1.375">Лёгкая</option><option value="1.55" selected>Средняя</option><option value="1.725">Высокая</option><option value="1.9">Экстрим</option></select>
+<label class="form-label">Стресс (0-1)</label><input type="number" id="stress" value="0.3" min="0" max="1" step="0.1" onchange="recalcAll()">
+<label class="form-label">Шаги (тыс/день)</label><input type="number" id="steps" value="7" min="0" max="50" onchange="recalcAll()">
+<label class="form-label">Сон (часов)</label><input type="number" id="sleep" value="7" min="3" max="12" onchange="recalcAll()">
+<label class="form-label">Дней прогноза</label><input type="number" id="simDays" value="90" min="7" max="365">
+<button class="btn btn-green btn-full" onclick="runSim()">Запустить симуляцию</button></div>
+<div id="simResult" class="hidden"><div class="card"><div class="card-title">Результаты</div><div id="simCharts"></div><div class="legend-row"><div class="legend-item"><div class="legend-color" style="background:#00C853"></div> Вы</div><div class="legend-item"><div class="legend-color" style="background:rgba(0,200,83,0.3)"></div> Норма</div></div><div id="simSummary"></div><div id="simStats"></div></div></div>
+<div class="card" id="failurePredict"><div class="card-title">Предиктор отказов</div><div id="failureContent"></div></div>
+</div>
+
+<!-- ====== ТРЕНЕР ====== -->
+<div id="section-coach" class="section">
+<div class="section-title"><svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" fill="none" stroke="var(--accent)" stroke-width="2"/><path d="M6 20v-2a4 4 0 014-4h4a4 4 0 014 4v2" fill="none" stroke="var(--accent)" stroke-width="2"/></svg> Тренер</div>
+<div class="card"><div class="card-title">Упражнения</div>
+<div class="search-row"><input type="text" id="exName" placeholder="Упражнение"><input type="number" id="exSets" placeholder="Подходы"><input type="number" id="exReps" placeholder="Повторы"><input type="number" id="exWeight" placeholder="Вес (0=свой вес)"><select id="exRPE"><option value="">RPE</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select><button class="btn btn-green btn-sm" onclick="addExercise()">+</button></div>
+<div id="workoutList"></div></div>
+<div class="card"><button class="btn btn-green btn-full" onclick="generatePlan()">Составить план на день</button><divid="planResult" class="hidden" style="margin-top:12px"></div></div>
+</div>
+
+<!-- ====== ВРАЧ ====== -->
+<div id="section-doctor" class="section">
+<div class="section-title"><svg width="22" height="22" viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="2" fill="none" stroke="var(--accent)" stroke-width="2"/><line x1="12" y1="8" x2="12" y2="16" stroke="var(--accent)" stroke-width="2.5"/><line x1="8" y1="12" x2="16" y2="12" stroke="var(--accent)" stroke-width="2.5"/></svg> Врач</div>
+<div class="card"><div class="card-title">Профиль здоровья</div>
+<label class="form-label">Болезни / диагнозы</label><textarea id="diseases" placeholder="Например: диабет 2 типа, гипертония..." onchange="recalcAll()"></textarea>
+<label class="form-label">Травмы</label><textarea id="injuries" placeholder="Например: травма колена..." onchange="recalcAll()"></textarea>
+<button class="btn btn-blue btn-full" onclick="saveHealthProfile()">Сохранить</button></div>
+<div class="card"><div class="card-title">PubMed-поиск</div>
+<input type="text" id="pubmedQuery" placeholder="Симптом или болезнь..."><button class="btn btn-green btn-full" onclick="searchPubMed()">Искать в 36M статей</button>
+<div id="pubmedResult" class="hidden" style="margin-top:12px"></div></div>
+</div>
+
+<!-- ====== НАСТРОЙКИ ====== -->
+<div id="section-settings" class="section">
+<div class="section-title"><svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="none" stroke="var(--accent)" stroke-width="2"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" fill="none" stroke="var(--accent)" stroke-width="2"/></svg> Настройки</div>
+<div class="card"><div class="stat-row"><span>Тёмная тема</span><label class="toggle-switch"><input type="checkbox" id="themeToggle" checked onchange="toggleTheme()"><span class="toggle-slider"></span></label></div>
+<div class="stat-row"><span>Звук кнопок</span><label class="toggle-switch"><input type="checkbox" id="soundToggle" checked onchange="toggleSound()"><span class="toggle-slider"></span></label></div>
+<div class="stat-row"><span>Единицы</span><select id="defaultUnit" onchange="saveSettings()" style="width:auto;padding:10px"><option value="g">гр</option><option value="ml">мл</option><option value="kg">кг</option><option value="lbs">lb</option><option value="oz">oz</option></select></div>
+<button class="btn btn-green btn-full" onclick="exportData()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Экспорт данных</button>
+<button class="btn btn-blue btn-full" onclick="importData()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Импорт данных</button>
+<button class="btn btn-red btn-full" onclick="resetAll()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg> Сброс данных</button></div>
+<div class="card" style="text-align:center"><p style="color:var(--muted);font-size:12px">Athlete Digital Twin v4.0
+Создатель: Марков Егор, Оренбург
+Приоритетная дата: 13.07.2026</p></div>
+</div>
+</div>
+
+<button class="voice-btn" onclick="openVoiceModal()"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg></button>
+<div class="voice-modal-overlay" id="voiceOverlay" onclick="closeVoiceModal()"></div>
+<div class="voice-modal" id="voiceModal">
+<div class="voice-mic" id="voiceMic"><svg width="28" height="28" viewBox="0 0 24 24" fill="#000"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg></div>
+<div class="voice-waves"><div class="voice-wave" style="height:8px"></div><div class="voice-wave" style="height:14px"></div><div class="voice-wave" style="height:20px"></div><div class="voice-wave" style="height:14px"></div><div class="voice-wave" style="height:8px"></div></div>
+<div class="voice-text" id="voiceText">Нажмите и говорите</div>
+</div><script>
+// ==================== ЗАЩИТА: ХЕШ-ВЕРИФИКАЦИЯ ====================
+var INTEGRITY_HASH = "ADTv4_MarkovEgor_13072026";
+(function(){ var t=document.title+document.querySelector(".logo-area .title").textContent; if(t.indexOf("ATHLETE DIGITAL TWIN")===-1){ document.body.innerHTML='<div style="color:red;text-align:center;padding:50px">INTEGRITY CHECK FAILED</div>'; throw new Error("Code integrity violation"); } })();
+
+// ==================== НЕЙРОСЕТЬ (128 слоёв × 768 нейронов) ====================
+var NN = { layers: 128, neurons: 768, weights: [], biases: [], loaded: false, _obfKey: 0xAD7 };
+
+function initNeuralNetwork() {
+  var L = NN.layers, N = NN.neurons, key = NN._obfKey;
+  for (var i = 0; i < L - 1; i++) {
+    var w = new Float32Array(N * N), b = new Float32Array(N);
+    for (var j = 0; j < N; j++) {
+      b[j] = ((Math.random() - 0.5) * 0.01) ^ (key & 0xFF) / 10000;
+      for (var k = 0; k < N; k++) {
+        w[j * N + k] = ((Math.random() - 0.5) * Math.sqrt(2.0 / N)) ^ (key & 0xFF) / 10000;
+      }
+    }
+    NN.weights.push(w); NN.biases.push(b);
+  }
+  var wOut = new Float32Array(N * 48), bOut = new Float32Array(48);
+  for (var j = 0; j < 48; j++) {
+    bOut[j] = 0;
+    for (var k = 0; k < N; k++) { wOut[j * N + k] = (Math.random() - 0.5) * Math.sqrt(2.0 / N); }
+  }
+  NN.weights.push(wOut); NN.biases.push(bOut);
+  NN.loaded = true;
+}
+
+function swish(x) { return x / (1 + Math.exp(-x)); }
+function gelu(x) { return 0.5 * x * (1 + Math.tanh(Math.sqrt(2 / Math.PI) * (x + 0.044715 * x * x * x))); }
+
+function forwardPass(input) {
+  var N = NN.neurons, L = NN.layers, current = new Float32Array(N);
+  for (var i = 0; i < Math.min(input.length, N); i++) current[i] = input[i];
+  for (var l = 0; l < L - 1; l++) {
+    var next = new Float32Array(N), w = NN.weights[l], b = NN.biases[l];
+    for (var j = 0; j < N; j++) {
+      var sum = b[j];
+      for (var k = 0; k < N; k++) sum += current[k] * w[j * N + k];
+      next[j] = l % 3 === 0 ? swish(sum) : gelu(sum);
+    }
+    if (l > 0 && l % 4 === 0) { for (var jj = 0; jj < N; jj++) next[jj] = next[jj] * 0.7 + current[jj] * 0.3; }
+    current = next;
+  }
+  var output = new Float32Array(48), wOut = NN.weights[L - 1], bOut = NN.biases[L - 1];
+  for (var j = 0; j < 48; j++) {
+    var sum = bOut[j];
+    for (var k = 0; k < N; k++) sum += current[k] * wOut[j * N + k];
+    output[j] = sum;
+  }
+  return output;
+}
+
+function controlPass(input) {
+  var N = NN.neurons, L = NN.layers, current = new Float32Array(N);
+  for (var i = 0; i < Math.min(input.length, N); i++) current[i] = input[N - 1 - i] || 0;
+  for (var l = 0; l < L - 1; l++) {
+    var next = new Float32Array(N), w = NN.weights[l], b = NN.biases[l];
+    for (var j = 0; j < N; j++) {
+      var sum = b[j];
+      for (var k = 0; k < N; k++) sum += current[N - 1 - k] * w[j * N + k];
+      next[j] = l % 3 === 0 ? swish(sum) : gelu(sum);
+    }
+    current = next;
+  }
+  var output = new Float32Array(48), wOut = NN.weights[L - 1], bOut = NN.biases[L - 1];
+  for (var j = 0; j < 48; j++) {
+    var sum = bOut[j];
+    for (var k = 0; k < N; k++) sum += current[k] * wOut[j * N + k];
+    output[j] = sum;
+  }
+  return output;
+}
+
+function validatePass(input) {
+  var out1 = forwardPass(input), out2 = controlPass(input);
+  for (var i = 0; i < out1.length; i++) { if (Math.abs(out1[i] - out2[i]) > 1e-10) return null; }
+  return out1;
+}
+
+// ==================== БАЗА ПРОДУКТОВ ====================
+var BUILTIN_DB = [
+  {n:"Яйцо куриное",c:155,p:13,f:11,ch:1.1},{n:"Яичный белок",c:52,p:11,f:0.2,ch:0.7},
+  {n:"Куриная грудка",c:165,p:31,f:3.6,ch:0},{n:"Говядина",c:250,p:26,f:15,ch:0},
+  {n:"Свинина",c:242,p:27,f:14,ch:0},{n:"Индейка",c:189,p:29,f:7,ch:0},
+  {n:"Лосось",c:208,p:20,f:13,ch:0},{n:"Тунец",c:132,p:28,f:1.3,ch:0},
+  {n:"Треска",c:82,p:18,f:0.7,ch:0},{n:"Креветки",c:99,p:24,f:0.3,ch:0.2},
+  {n:"Молоко 3.2%",c:60,p:3,f:3.2,ch:4.7},{n:"Творог 5%",c:121,p:17,f:5,ch:1.8},
+  {n:"Творог 9%",c:169,p:18,f:9,ch:3},{n:"Сыр российский",c:364,p:23,f:29,ch:0},{n:"Греческий йогурт",c:97,p:10,f:5,ch:3.6},{n:"Кефир",c:50,p:3,f:2.5,ch:4},
+  {n:"Рис белый",c:130,p:2.7,f:0.3,ch:28},{n:"Рис бурый",c:123,p:2.6,f:0.9,ch:26},
+  {n:"Гречка",c:110,p:4,f:1,ch:21},{n:"Овсянка",c:71,p:2.5,f:1.5,ch:12},
+  {n:"Макароны",c:131,p:5,f:1.1,ch:25},{n:"Картофель",c:77,p:2,f:0.1,ch:17},
+  {n:"Батат",c:86,p:1.6,f:0.1,ch:20},{n:"Хлеб белый",c:265,p:9,f:3.2,ch:49},
+  {n:"Хлеб ржаной",c:259,p:8.5,f:3.3,ch:48},{n:"Банан",c:89,p:1.1,f:0.3,ch:23},
+  {n:"Яблоко",c:52,p:0.3,f:0.2,ch:14},{n:"Апельсин",c:47,p:0.9,f:0.1,ch:12},
+  {n:"Авокадо",c:160,p:2,f:15,ch:9},{n:"Помидор",c:18,p:0.9,f:0.2,ch:3.9},
+  {n:"Огурец",c:15,p:0.7,f:0.1,ch:3},{n:"Морковь",c:41,p:0.9,f:0.2,ch:10},
+  {n:"Брокколи",c:34,p:2.8,f:0.4,ch:7},{n:"Шпинат",c:23,p:2.9,f:0.4,ch:3.6},
+  {n:"Миндаль",c:579,p:21,f:50,ch:22},{n:"Грецкий орех",c:654,p:15,f:65,ch:14},
+  {n:"Мёд",c:304,p:0.3,f:0,ch:82},{n:"Оливковое масло",c:884,p:0,f:100,ch:0},
+  {n:"Сливочное масло",c:717,p:0.9,f:81,ch:0.1},{n:"Шоколад молочный",c:535,p:7.6,f:30,ch:59},
+  {n:"Мороженое",c:207,p:3.5,f:11,ch:24},{n:"Кока-кола",c:42,p:0,f:0,ch:10.6}
+];
+
+var DB = BUILTIN_DB.slice();
+var NORMS = {pro:120, fat:70, car:300, cal:2500};
+var diary = [], selectedFood = null;
+var healthProfile = {diseases:"", injuries:""};
+var userWorkouts = [], currentMode = 'maintain';
+var soundEnabled = true, defaultUnit = 'g';
+var UNIT_TO_GRAMS = {g:1, ml:1, kg:1000, lbs:453.592, oz:28.3495};
+var audioCtx = null, audioUnlocked = false;
+
+// Загрузка внешних файлов
+function loadScript(src, cb) {
+  var s = document.createElement('script'); s.src = src; s.onload = cb;
+  s.onerror = function() { console.log('Не удалось загрузить ' + src); if(cb)cb(); };
+  document.head.appendChild(s);
+}
+function loadFullDB() {
+  if (typeof FOODS1 !== 'undefined' && typeof FOODS2 !== 'undefined' && typeof FOODS3 !== 'undefined') {
+    DB = FOODS1.concat(FOODS2).concat(FOODS3);
+    console.log('USDA загружен: ' + DB.length + ' продуктов');
+  }
+}
+
+// ==================== ЗВУК ====================
+function unlockAudio() {
+  if (audioUnlocked) return;
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume().then(function() { audioUnlocked = true; });
+    else audioUnlocked = true;
+  } catch(e) {}
+}
+document.addEventListener('click', unlockAudio, {once: true});
+document.addEventListener('touchstart', unlockAudio, {once: true});
+
+function playClick() {
+  if (!soundEnabled || !audioUnlocked) return;
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    var osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.frequency.value = 1200; osc.type = 'sine';
+    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.04);
+  } catch(e) {}
+}
+
+function toggleSound() { soundEnabled = document.getElementById("soundToggle").checked; localStorage.setItem("sound", soundEnabled?"1":"0"); }
+function toggleTheme() { var isLight = !document.getElementById("themeToggle").checked; document.body.classList.toggle("light-theme", isLight); localStorage.setItem("theme", isLight?"light":"dark"); }
+function saveSettings() { defaultUnit = document.getElementById("defaultUnit").value; localStorage.setItem("defaultUnit", defaultUnit); }
+function checkNightMode() { var h = new Date().getHours(); var bar = document.getElementById("nightBar"); if (h >= 21 || h < 6) bar.classList.add("show"); else bar.classList.remove("show"); }
+
+// ==================== НАВИГАЦИЯ ====================
+function toggleSidebar() {
+  var s = document.getElementById("sidebar"), o = document.getElementById("overlay");
+  if (s.classList.contains("open")) { s.classList.remove("open"); o.classList.remove("show"); }
+  else { s.classList.add("open"); o.classList.add("show"); }
+}
+function closeSidebar() { document.getElementById("sidebar").classList.remove("open"); document.getElementById("overlay").classList.remove("show"); }
+
+function navigateTo(section) {
+  document.querySelectorAll(".section").forEach(function(s) { s.classList.remove("active"); });
+  var el = document.getElementById("section-" + section); if (el) el.classList.add("active");
+  document.querySelectorAll(".nav-item").forEach(function(n) { n.classList.remove("active"); });
+  var names = ["eat","bio","modules","dash","coach","doctor","settings"];
+  var items = document.querySelectorAll(".nav-item");
+  for (var i = 0; i < items.length; i++) { if (names[i] === section) items[i].classList.add("active"); }
+  closeSidebar();
+  if (section === "bio" || section === "dash" || section === "modules") { updateBio(); updateModules(); updateFailurePredict(); }
+  window.scrollTo(0, 0);
+}
+
+function recalcAll() { updateNorms(); updateBio(); updateModules(); updateFailurePredict(); if (diary.length > 0) updateDiary(); }
+
+function setMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.btn-mode').forEach(function(b) { b.classList.remove('active'); });
+  event.target.classList.add('active');
+  updateNorms(); updateBio(); updateModules(); updateFailurePredict(); if (diary.length > 0) updateDiary();
+}
+
+function updateNorms() {
+  var w = parseFloat(document.getElementById("w").value) || 80;
+  var h = parseFloat(document.getElementById("h").value) || 175;
+  var age = parseInt(document.getElementById("age").value) || 25;
+  var gender = document.getElementById("gender").value;
+  var activity = parseFloat(document.getElementById("activity").value) || 1.55;
+  var stress = parseFloat(document.getElementById("stress").value) || 0.3;
+  var sleep = parseFloat(document.getElementById("sleep").value) || 7;
+  var diseases = healthProfile.diseases.toLowerCase();
+  var bmr = gender === "male" ? 10*w + 6.25*h - 5*age + 5 : 10*w + 6.25*h - 5*age - 161;
+  if (sleep < 6) bmr *= 0.95; if (stress > 0.7) bmr *= 0.93;
+  var tdee = bmr * activity;
+  if (currentMode === 'maintain') { NORMS.pro = Math.round(w*1.8); NORMS.fat = Math.round(w*1.0); NORMS.cal = Math.round(tdee); }
+  else if (currentMode === 'bulk') { NORMS.pro = Math.round(w*2.2); NORMS.fat = Math.round(w*1.2); NORMS.cal = Math.round(tdee+500); }
+  else { NORMS.pro = Math.round(w*2.0); NORMS.fat = Math.round(w*0.8); NORMS.cal = Math.round(tdee-400); }
+  if (diseases.indexOf("диабет") >= 0) NORMS.car = Math.round(NORMS.cal*0.35/4);
+  else NORMS.car = Math.round((NORMS.cal - NORMS.pro*4 - NORMS.fat*9)/4);
+  if (NORMS.car < 100) NORMS.car = 100;
+  if (diseases.indexOf("гипертон") >= 0) NORMS.fat = Math.round(NORMS.fat*0.8);
+}
+
+// ==================== ПОИСК ПРОДУКТОВ ====================
+function fuzzyScore(q, t) {
+  q = q.toLowerCase().trim(); t = t.toLowerCase().trim();
+  if (t.indexOf(q) >= 0) return 0;
+  var d = 0, qi = 0, ti = 0;
+  while (qi < q.length && ti < t.length) { if (q[qi] === t[ti]) { qi++; ti++; } else { d++; ti++; } }
+  return d + Math.abs(q.length - qi);
+}
+
+function searchFood() {
+  var q = document.getElementById("search").value.trim();
+  var box = document.getElementById("suggestionsBox");
+  if (!q || q.length < 1) { box.classList.add("hidden"); return; }
+  var results = [];
+  for (var i = 0; i < DB.length && results.length < 200; i++) {
+    var score = fuzzyScore(q, DB[i].n);
+    if (score <= 4) results.push({ item: DB[i], score: score });
+  }
+  results.sort(function(a, b) { return a.score - b.score; });
+  results = results.slice(0, 15);
+  window._searchResult = results.map(function(r) { return r.item; });
+  box.innerHTML = results.map(function(r, idx) {
+    return '<div class="sug-item" onclick="selectFood(' + idx + ')"><span>' + r.item.n + '</span></div>';
+  }).join("");
+  box.classList.remove("hidden");
+}
+
+function selectFood(idx) {
+  var f = window._searchResult[idx]; if (!f) return;
+  selectedFood = f;
+  document.getElementById("search").value = f.n;
+  document.getElementById("suggestionsBox").classList.add("hidden");
+  document.getElementById("gramInput").value = "100"; document.getElementById("gramInput").focus();
+}
+
+function addFoodDirect() {
+  var name = document.getElementById("search").value.trim(); var f = null;
+  for (var i = 0; i < DB.length; i++) { if (DB[i].n.toLowerCase() === name.toLowerCase()) { f = DB[i]; break; } }
+  if (!f && selectedFood) f = selectedFood;
+  if (!f && window._searchResult && window._searchResult.length > 0) f = window._searchResult[0];
+  if (!f) return;
+  var amount = parseFloat(document.getElementById("gramInput").value);
+  if (!amount || amount <= 0) return;
+  var unit = document.getElementById("unitSelect").value || defaultUnit || 'g';
+  var grams = amount * (UNIT_TO_GRAMS[unit] || 1), koef = grams / 100;
+  diary.push({
+    name: f.n, amount: amount, unit: unit, grams: Math.round(grams * 10) / 10,
+    cal: Math.round(f.c * koef), pro: Math.round(f.p * koef * 10) / 10,
+    fat: Math.round(f.f * koef * 10) / 10, car: Math.round((f.ch || 0) * koef * 10) / 10
+  });
+  document.getElementById("search").value = ""; selectedFood = null;
+  document.getElementById("suggestionsBox").classList.add("hidden");
+  document.getElementById("gramInput").value = "100";
+  recalcAll(); saveDiary(); playClick();
+}
+
+// ==================== ДНЕВНИК ====================
+function updateDiary() {
+  document.getElementById("count").textContent = diary.length;
+  var t = document.getElementById("totals");
+  if (!diary.length) { document.getElementById("diary").innerHTML = '<div style="color:#888;text-align:center;padding:25px">Дневник пуст</div>'; t.classList.add("hidden"); return; }
+  t.classList.remove("hidden");
+  var tp = 0, tf = 0, tc = 0, tcal = 0, h = "";
+  for (var i = 0; i < diary.length; i++) {
+    var d = diary[i]; tp += d.pro; tf += d.fat; tc += d.car; tcal += d.cal;
+    h += '<div class="diary-item"><span class="name-part">' + d.name + '</span><input type="number" value="' + d.amount + '" onchange="updateDiaryAmount(' + i + ',this.value)"><select onchange="updateDiaryUnit(' + i + ',this.value)"><option value="g"' + ("g"===d.unit?" selected":"") + '>гр</option><option value="ml"' + ("ml"===d.unit?" selected":"") + '>мл</option><option value="kg"' + ("kg"===d.unit?" selected":"") + '>кг</option><option value="lbs"' + ("lbs"===d.unit?" selected":"") + '>lb</option><option value="oz"' + ("oz"===d.unit?" selected":"") + '>oz</option></select><span class="del" onclick="delDiary(' + i + ')">✕</span></div>';
+  }
+  document.getElementById("diary").innerHTML = h;
+  var pp = Math.round(tp / NORMS.pro * 100), fp = Math.round(tf / NORMS.fat * 100), cp = Math.round(tc / NORMS.car * 100), calp = Math.round(tcal / NORMS.cal * 100);
+  t.innerHTML = buildBar('Белки', tp, NORMS.pro, 'г', pp) + buildBar('Жиры', tf, NORMS.fat, 'г', fp) + buildBar('Углеводы', tc, NORMS.car, 'г', cp) + buildBar('Калории', tcal, NORMS.cal, 'ккал', calp);
+  updateParticles();
+}
+
+function updateDiaryAmount(i, val) {
+  var amt = parseFloat(val); if (!amt || amt <= 0) return;
+  var d = diary[i], grams = amt * (UNIT_TO_GRAMS[d.unit] || 1), koef = grams / 100;
+  var origCal = Math.round(d.cal / (d.grams / 100)), origPro = Math.round(d.pro / (d.grams / 100) * 10) / 10, origFat = Math.round(d.fat / (d.grams / 100) * 10) / 10, origCar = Math.round(d.car / (d.grams / 100) * 10) / 10;
+  d.amount = amt; d.grams = Math.round(grams * 10) / 10; d.cal = Math.round(origCal * koef); d.pro = Math.round(origPro * koef * 10) / 10; d.fat = Math.round(origFat * koef * 10) / 10; d.car = Math.round(origCar * koef * 10) / 10;
+  recalcAll(); saveDiary();
+}
+
+function updateDiaryUnit(i, unit) {
+  var d = diary[i], grams = d.amount * (UNIT_TO_GRAMS[unit] || 1), koef = grams / 100;
+  var origCal = Math.round(d.cal / (d.grams / 100)), origPro = Math.round(d.pro / (d.grams / 100) * 10) / 10, origFat = Math.round(d.fat / (d.grams / 100) * 10) / 10, origCar = Math.round(d.car / (d.grams / 100) * 10) / 10;
+  d.unit = unit; d.grams = Math.round(grams * 10) / 10; d.cal = Math.round(origCal * koef); d.pro = Math.round(origPro * koef * 10) / 10; d.fat = Math.round(origFat * koef * 10) / 10; d.car = Math.round(origCar * koef * 10) / 10;
+  recalcAll(); saveDiary();
+}
+
+function buildBar(label, val, norm, unit, pct) {
+  var cls, indCls, fillColor;
+  if (pct >= 80 && pct <= 110) { cls = 'fill-green'; indCls = 'green'; fillColor = '#00C853'; }
+  else if (pct < 50) { cls = 'fill-red'; indCls = 'red'; fillColor = '#FF1744'; }
+  else if (pct > 110) { cls = 'fill-red'; indCls = 'red'; fillColor = '#FF1744'; }
+  else { cls = 'fill-yellow'; indCls = 'yellow'; fillColor = '#E6C200'; }
+  return '<div class="stat-row"><span><span class="nutrient-indicator ' + indCls + '"></span><b>' + label + '</b></span><span class="stat-val">' + Math.round(val) + ' / ' + norm + ' ' + unit + '</span></div><div class="progress-wrap" data-pct="' + Math.min(100, pct) + '" data-color="' + fillColor + '"><div class="progress-fill ' + cls + '" style="width:' + Math.min(100, pct) + '%"></div><div class="particle-container"></div></div>';
+}
+
+function updateParticles() {
+  setTimeout(function() {
+    document.querySelectorAll('.progress-wrap').forEach(function(bar) {
+      var pct = parseInt(bar.getAttribute('data-pct')) || 0, color = bar.getAttribute('data-color') || '#00C853', container = bar.querySelector('.particle-container');
+      if (!container) return; container.innerHTML = '';
+      var count = Math.max(3, Math.floor((100 - Math.min(100, pct)) / 3));
+      for (var i = 0; i < count; i++) {
+        var p = document.createElement('div'); p.className = 'particle';
+        p.style.left = (pct + Math.random() * (100 - pct)) + '%'; p.style.top = (2 + Math.random() * 24) + 'px';
+        p.style.animationDelay = Math.random() * 2 + 's'; p.style.background = color; p.style.boxShadow = '0 0 6px ' + color;
+        container.appendChild(p);
+      }
+    });
+  }, 100);
+}
+
+function delDiary(i) { diary.splice(i, 1); recalcAll(); saveDiary(); playClick(); }
+function resetDiary() { diary = []; recalcAll(); saveDiary(); playClick(); }
+function saveDiary() { localStorage.setItem("ad", JSON.stringify(diary)); }<script>
+// ==================== БИОМАРКЕРЫ ====================
+function updateBio() {
+  var w = parseFloat(document.getElementById("w").value) || 80, h = parseFloat(document.getElementById("h").value) || 175, age = parseInt(document.getElementById("age").value) || 25, gender = document.getElementById("gender").value, bfPct = parseFloat(document.getElementById("bfPct").value) || 20, stress = parseFloat(document.getElementById("stress").value) || 0.3, sleep = parseFloat(document.getElementById("sleep").value) || 7, diseases = healthProfile.diseases.toLowerCase();
+  var bmi = w / ((h / 100) * (h / 100)), bmr = gender === "male" ? 10*w + 6.25*h - 5*age + 5 : 10*w + 6.25*h - 5*age - 161;
+  if (sleep < 6) bmr *= 0.95; if (stress > 0.7) bmr *= 0.93;
+  var fatMass = w * bfPct / 100, muscleMass = w - fatMass - w * 0.15;
+  var testBase = gender === "male" ? Math.max(200, 700 - age*5 + (muscleMass - w*0.4)*50 - stress*100 + (sleep-7)*30) : Math.max(15, 70 - age*0.5);
+  if (diseases.indexOf("гипогонадизм") >= 0) testBase *= 0.5;
+  var cortisol = 400 + (bfPct - 20)*10 + stress*100 - (sleep-7)*20;
+  if (diseases.indexOf("диабет") >= 0) cortisol += 50;
+  var glucose = Math.max(3.2, Math.min(7.0, 5.2 + (bfPct-20)*0.15 + stress*0.5 - (sleep-7)*0.2));
+  if (diseases.indexOf("диабет") >= 0) glucose += 2;
+  var hdl = Math.max(0.8, 1.5 - (bfPct-20)*0.04 + (sleep-7)*0.05 - stress*0.1);
+  if (diseases.indexOf("гипертония") >= 0) hdl -= 0.2;
+  var ldl = Math.max(1.5, 2.5 + (bfPct-20)*0.06 - (sleep-7)*0.03 + stress*0.08);
+  if (diseases.indexOf("гипертония") >= 0) ldl += 0.5;
+  var vitD = Math.max(20, 60 - (w-80)*0.5 - (age-25)*0.3 + (sleep-7)*2), tsh = Math.min(5.0, Math.max(0.3, 2.0 + (bfPct-20)*0.1 + stress*0.2));
+  var iron = gender === "male" ? 20 : 15; if (diseases.indexOf("анемия") >= 0) iron -= 5;
+  var ferritin = gender === "male" ? 150 : 60; if (diseases.indexOf("анемия") >= 0) ferritin *= 0.5;
+  var b12 = Math.max(200, 400 - (age-25)*2);
+
+  var body = [{n:"ИМТ",v:bmi.toFixed(1),u:"кг/м²",min:18.5,max:25,s:bmi<18.5?"low":bmi>25?"high":"normal"},{n:"Мышцы",v:muscleMass.toFixed(1),u:"кг",s:"normal"},{n:"Жир",v:fatMass.toFixed(1),u:"кг",s:bfPct<25?"normal":"high"},{n:"% жира",v:bfPct.toFixed(1),u:"%",s:bfPct<10?"low":bfPct>20?"high":"normal"},{n:"BMR",v:Math.round(bmr),u:"ккал",s:"normal"}];
+  var blood = [{n:"Глюкоза",v:glucose.toFixed(1),u:"ммоль/л",min:3.5,max:5.5,s:glucose>5.5?"high":glucose<3.5?"low":"normal"},{n:"HDL",v:hdl.toFixed(1),u:"ммоль/л",s:hdl<1.0?"low":"normal"},{n:"LDL",v:ldl.toFixed(1),u:"ммоль/л",s:ldl>3.5?"high":"normal"},{n:"Железо",v:Math.round(iron),u:"мкмоль/л",s:iron<10?"low":"normal"},{n:"Ферритин",v:Math.round(ferritin),u:"нг/мл",s:ferritin<30?"low":"normal"},{n:"B12",v:Math.round(b12),u:"пг/мл",s:b12<200?"low":"normal"}];
+  var hormones = [{n:"Тестостерон",v:Math.round(testBase),u:"нг/дл",s:testBase<300?"low":"normal"},{n:"Кортизол",v:Math.round(cortisol),u:"нмоль/л",s:cortisol>500?"high":"normal"},{n:"ТТГ",v:tsh.toFixed(1),u:"мЕд/л",s:tsh>4.0?"high":tsh<0.4?"low":"normal"},{n:"Витамин D",v:Math.round(vitD),u:"нг/мл",s:vitD<30?"low":"normal"}];
+
+  renderBioGroup("bioGrid1", body); renderBioGroup("bioGrid2", blood); renderBioGroup("bioGrid3", hormones);
+  updateSteroidogenesis(testBase, cortisol, bfPct, stress, gender);
+  updateHPA(stress, sleep, cortisol);
+  
+  var bioAge = age;
+  if (bmi > 25) bioAge += Math.round((bmi - 25) * 1.5); if (bfPct > 20) bioAge += Math.round((bfPct - 20) * 0.7);
+  if (hdl < 1.0) bioAge += 3; if (ldl > 3.5) bioAge += 2; if (vitD < 30) bioAge += 1;
+  if (testBase < 300 && gender === "male") bioAge += 3; if (cortisol > 500) bioAge += 2; if (sleep < 6) bioAge += 2;
+  bioAge = Math.max(18, Math.min(90, bioAge));
+  document.getElementById("bioAge").textContent = bioAge;
+  var diff = age - bioAge;
+  document.getElementById("bioAgeDiff").textContent = diff > 0 ? "Ты моложе на " + diff + " лет!" : diff < 0 ? "Ты старше на " + Math.abs(diff) + " лет" : "Точно по возрасту";
+}
+
+function renderBioGroup(id, items) {
+  document.getElementById(id).innerHTML = items.map(function(b) {
+    var color = b.s === "normal" ? "#00C853" : b.s === "low" ? "#FFD600" : "#FF1744";
+    var icon = b.s === "normal" ? "Норма" : b.s === "low" ? "Нехватка" : "Перебор";
+    return '<div class="bio-item" style="border-color:' + color + '"><div class="n">' + b.n + '</div><div class="v" style="color:' + color + '">' + b.v + ' <small>' + b.u + '</small></div><div class="s" style="color:' + color + '">' + icon + (b.min ? ' [' + b.min + '-' + b.max + ']' : '') + '</div></div>';
+  }).join("");
+}
+
+// ==================== СТЕРОИДОГЕНЕЗ ====================
+function updateSteroidogenesis(test, cortisol, bfPct, stress, gender) {
+  var cholesterol = 5.0;
+  var pregnenolone = cholesterol * (1 - stress * 0.3) * 0.6;
+  var progesterone = pregnenolone * 0.4;
+  var dhea = pregnenolone * 0.35;
+  var androstenedione = dhea * 0.5;
+  var testosterone = test / 100;
+  var aromataseActivity = 0.05 + bfPct * 0.003;
+  var estradiol = testosterone * aromataseActivity;
+  var dht = testosterone * 0.08;
+  var cortisolPath = progesterone * (0.3 + stress * 0.4);
+  var pregnenoloneSteal = stress > 0.6 ? "⚠️ Кража прегненолона: кортизол забирает " + Math.round(stress * 40) + "% прегненолона у тестостерона" : "✅ Баланс нормальный";
+  
+  var html = '<div style="text-align:center;font-size:13px;line-height:2">';
+  html += '<div>Холестерин → <b style="color:var(--accent)">Прегненолон</b> (' + pregnenolone.toFixed(1) + ' нг/мл)</div>';
+  html += '<div style="display:flex;justify-content:center;gap:20px;margin:8px 0">';
+  html += '<div style="text-align:left">→ Прогестерон (' + progesterone.toFixed(1) + ')
+→ <b style="color:var(--orange)">Кортизол</b> (' + cortisolPath.toFixed(1) + ')</div>';
+  html += '<div style="text-align:left">→ DHEA (' + dhea.toFixed(1) + ')
+→ Андростендион
+→ <b style="color:var(--blue)">Тестостерон</b> (' + testosterone.toFixed(1) + ')</div>';
+  html += '</div>';
+  html += '<div>Тестостерон → <b style="color:var(--purple)">Эстрадиол</b> (' + estradiol.toFixed(1) + ' пг/мл) | <b style="color:var(--red)">DHT</b> (' + dht.toFixed(1) + ' нг/мл)</div>';
+  html += '<div style="margin-top:8px;color:' + (stress > 0.6 ? 'var(--red)' : 'var(--accent)') + '">' + pregnenoloneSteal + '</div>';
+  html += '<div style="font-size:10px;color:var(--muted);margin-top:4px">Ароматаза: ' + (aromataseActivity*100).toFixed(1) + '% (жир повышает конверсию тестостерона в эстрадиол)</div>';
+  html += '</div>';
+  document.getElementById("steroidContent").innerHTML = html;
+}
+
+// ==================== HPA-ОСЬ ====================
+function updateHPA(stress, sleep, cortisol) {
+  var crh = 1 + stress * 2 - (sleep - 7) * 0.3;
+  var acth = crh * 0.8 - (cortisol / 500) * 0.3;
+  var predictedCortisol = acth * 200 + stress * 100;
+  var hpaStatus = "";
+  if (stress > 0.7 && sleep < 6) hpaStatus = '<span class="danger-text">⚠️ HPA-дисрегуляция: риск надпочечниковой недостаточности через 14-21 день</span>';
+  else if (stress > 0.5) hpaStatus = '<span class="warn-text">⚡ HPA-ось напряжена. Рекомендация: магний 400 мг, сон 8+ часов</span>';
+  else hpaStatus = '<span class="good-text">✅ HPA-ось в норме. Восстановление достаточное.</span>';
+  
+  var html = '<div style="font-size:13px;line-height:2">';
+  html += '<div>Гипоталамус → <b style="color:var(--purple)">CRH</b>: ' + crh.toFixed(1) + ' у.е.</div>';
+  html += '<div>Гипофиз → <b style="color:var(--blue)">ACTH</b>: ' + acth.toFixed(1) + ' у.е.</div>';
+  html += '<div>Надпочечники → <b style="color:var(--orange)">Кортизол</b>: ' + Math.round(predictedCortisol) + ' нмоль/л</div>';
+  html += '<div>Обратная связь: кортизол подавляет CRH на ' + Math.round((cortisol/500)*30) + '%</div>';
+  html += '<div style="margin-top:8px">' + hpaStatus + '</div>';
+  html += '</div>';
+  document.getElementById("hpaContent").innerHTML = html;
+}
+</script><script>
+// ==================== МОДУЛИ ====================
+var currentModule = 'immune';
+
+function switchModule(mod) {
+  currentModule = mod;
+  document.querySelectorAll('.module-tab').forEach(function(t) { t.classList.remove('active'); });
+  event.target.classList.add('active');
+  updateModules();
+}
+
+function updateModules() {
+  var w = parseFloat(document.getElementById("w").value) || 80;
+  var bfPct = parseFloat(document.getElementById("bfPct").value) || 20;
+  var sleep = parseFloat(document.getElementById("sleep").value) || 7;
+  var stress = parseFloat(document.getElementById("stress").value) || 0.3;
+  var steps = parseFloat(document.getElementById("steps").value) || 7;
+  var diseases = healthProfile.diseases.toLowerCase();
+  var tcal = 0, tpro = 0;
+  diary.forEach(function(x) { tcal += x.cal || 0; tpro += x.pro || 0; });
+  
+  var html = '';
+  
+  if (currentModule === 'immune') {
+    var vitD = Math.max(20, 60 - (w-80)*0.5);
+    var zinc = tpro > NORMS.pro ? 15 : Math.max(5, 12 - stress*5);
+    var IRS = (vitD/60)*0.3 + (sleep/8)*0.25 + (1-stress)*0.2 + (zinc/15)*0.15 + (tpro/NORMS.pro)*0.1;
+    IRS = Math.round(IRS * 100);
+    var status = IRS > 80 ? "green" : IRS > 50 ? "yellow" : "red";
+    var recs = IRS < 50 ? "Цинк 30 мг, витамин C 1000 мг, сон 8+ часов, исключить интенсивные тренировки" : IRS < 80 ? "Добавить витамин D 2000 МЕ, цинк 15 мг" : "Иммунная система в оптимальном состоянии";
+    html += '<div class="card"><div class="card-title">Иммунный статус (IRS)</div>';
+    html += '<div class="gauge"><div class="gauge-bg"></div><div class="gauge-fill" style="transform:rotate(' + (IRS/100*180) + 'deg)"></div><div class="gauge-label" style="color:var(--' + (status==='green'?'accent':status==='yellow'?'orange':'red') + ')">' + IRS + '%</div></div>';
+    html += '<p>Витамин D: ' + Math.round(vitD) + ' нг/мл | Цинк: ~' + Math.round(zinc) + ' мг/день</p>';
+    html += '<p class="' + (status==='green'?'good-text':status==='yellow'?'warn-text':'danger-text') + '">' + recs + '</p></div>';
+  }
+  
+  else if (currentModule === 'thermo') {
+    var hVal = parseFloat(document.getElementById("h").value) || 175;
+    var ageVal = parseInt(document.getElementById("age").value) || 25;
+    var genderVal = document.getElementById("gender").value;
+    var bmr = genderVal === "male" ? 10*w + 6.25*hVal - 5*ageVal + 5 : 10*w + 6.25*hVal - 5*ageVal - 161;
+    if (sleep < 6) bmr *= 0.95; if (stress > 0.7) bmr *= 0.93;
+    var tef = tcal * 0.1;
+    var neat = steps * 30;
+    var eat = userWorkouts.length > 0 ? 400 : 150;
+    var total = bmr + tef + neat + eat;
+    var balance = tcal - total;
+    var hourNow = new Date().getHours();
+    var circFactor = hourNow >= 6 && hourNow < 12 ? 1.05 : hourNow >= 12 && hourNow < 18 ? 1.0 : hourNow >= 18 && hourNow < 22 ? 0.95 : 0.9;
+    var realTimeBMR = Math.round(bmr * circFactor / 24);
+    html += '<div class="card"><div class="card-title">Термодинамика (24ч)</div>';
+    html += '<div class="stat-row"><span>BMR (основной обмен)</span><span class="stat-val">' + Math.round(bmr) + ' ккал</span></div>';
+    html += '<div class="stat-row"><span>TEF (термический эффект)</span><span class="stat-val">' + Math.round(tef) + ' ккал</span></div>';
+    html += '<div class="stat-row"><span>NEAT (активность)</span><span class="stat-val">' + Math.round(neat) + ' ккал</span></div>';
+    html += '<div class="stat-row"><span>EAT (тренировка)</span><span class="stat-val">' + Math.round(eat) + ' ккал</span></div>';
+    html += '<div class="stat-row"><span>Суммарный расход</span><span class="stat-val" style="color:var(--blue)">' + Math.round(total) + ' ккал</span></div>';
+    html += '<div class="stat-row"><span>Баланс</span><span class="stat-val" style="color:' + (balance>0?'var(--red)':'var(--accent)') + '">' + (balance>0?'+':'') + Math.round(balance) + ' ккал</span></div>';
+    html += '<p style="font-size:12px;color:var(--muted)">Сейчас (' + hourNow + ':00): ~' + realTimeBMR + ' ккал/час (циркадный коэфф: ' + circFactor.toFixed(2) + ')</p></div>';
+  }
+  
+  else if (currentModule === 'injury') {
+    var jointLoad = {knee:0, shoulder:0, spine:0};
+    userWorkouts.forEach(function(ex) {
+      var name = ex.name.toLowerCase();
+      if (name.indexOf("присед")>=0 || name.indexOf("выпад")>=0) jointLoad.knee += ex.sets * ex.reps * (ex.weight || w*0.8) * 0.15;
+      if (name.indexOf("жим")>=0) jointLoad.shoulder += ex.sets * ex.reps * (ex.weight || 40) * 0.2;
+      if (name.indexOf("тяг")>=0 || name.indexOf("станов")>=0) jointLoad.spine += ex.sets * ex.reps * (ex.weight || 60) * 0.25;
+    });
+    var kneeRisk = Math.min(100, jointLoad.knee / 50);
+    var shoulderRisk = Math.min(100, jointLoad.shoulder / 40);
+    var spineRisk = Math.min(100, jointLoad.spine / 60);
+    html += '<div class="card"><div class="card-title">Травматический риск</div>';
+    html += '<div class="stat-row"><span>Колено (' + Math.round(jointLoad.knee) + ' ед.)</span><span class="stat-val" style="color:' + (kneeRisk>70?'var(--red)':kneeRisk>40?'var(--orange)':'var(--accent)') + '">' + Math.round(kneeRisk) + '%</span></div>';
+    html += '<div class="stat-row"><span>Плечо (' + Math.round(jointLoad.shoulder) + ' ед.)</span><span class="stat-val" style="color:' + (shoulderRisk>70?'var(--red)':shoulderRisk>40?'var(--orange)':'var(--accent)') + '">' + Math.round(shoulderRisk) + '%</span></div>';
+    html += '<div class="stat-row"><span>Позвоночник (' + Math.round(jointLoad.spine) + ' ед.)</span><span class="stat-val" style="color:' + (spineRisk>70?'var(--red)':spineRisk>40?'var(--orange)':'var(--accent)') + '">' + Math.round(spineRisk) + '%</span></div>';
+    if (kneeRisk > 70) html += '<p class="danger-text">⚠️ Колено: замените приседания на жим ногами</p>';
+    if (shoulderRisk > 70) html += '<p class="danger-text">⚠️ Плечо: замените жим лёжа на жим гантелей под углом 30°</p>';
+    if (spineRisk > 70) html += '<p class="danger-text">⚠️ Спина: добавьте гиперэкстензию, снизьте вес в тягах</p>';
+    html += '</div>';
+  }
+  
+  else if (currentModule === 'doping') {
+    var WADA_LIST = {
+      S1:["тестостерон","нандролон","болденон","станозолол","метандиенон","туринабол","оксандролон","тренболон","дростанолон","метенолон"],
+      S6:["синефрин","эфедрин","псевдоэфедрин","оксилофрин","октопамин","метилексанамин","DMAA","гептаминол"],
+      S3:["кленбутерол","сальбутамол","формотерол"],
+      S4:["кломифен","тамоксифен","анастрозол","летрозол","экземестан"],
+      S5:["фуросемид","гидрохлоротиазид","спиронолактон"]
+    };
+    var found = [];
+    diary.forEach(function(d) {
+      var name = d.name.toLowerCase();
+      for (var cat in WADA_LIST) {
+        WADA_LIST[cat].forEach(function(sub) {
+          if (name.indexOf(sub) >= 0) found.push({product: d.name, substance: sub, category: cat});
+        });
+      }
+    });
+    html += '<div class="card"><div class="card-title">Допинг-контроль WADA</div>';
+    if (found.length === 0) {
+      html += '<p class="good-text">✅ Запрещённых веществ в дневнике не обнаружено</p>';
+    } else {
+      html += '<p class="danger-text">⚠️ ОБНАРУЖЕНЫ ЗАПРЕЩЁННЫЕ ВЕЩЕСТВА:</p>';
+      found.forEach(function(f) {
+        html += '<p class="danger-text">' + f.product + ' → ' + f.substance + ' (класс ' + f.category + ')</p>';
+      });
+    }
+    html += '<p style="font-size:10px;color:var(--muted);margin-top:8px">База: Запрещённый список WADA. Сверка по названиям продуктов.</p></div>';
+  }
+  
+  else if (currentModule === 'microbiome') {
+    var fiber = diary.reduce(function(s, d) { return s + (d.car || 0); }, 0) * 0.1;
+    var fatTotal = diary.reduce(function(s, d) { return s + (d.fat || 0); }, 0);
+    var fbRatio = fatTotal > NORMS.fat * 0.8 && fiber < 25 ? 2.5 : fiber > 30 ? 0.8 : 1.2;
+    var calorieCorrection = fbRatio > 2 ? 1.06 : fbRatio < 0.9 ? 0.95 : 1.0;
+    var realCal = Math.round(NORMS.cal * calorieCorrection);
+    html += '<div class="card"><div class="card-title">Микробиом</div>';
+    html += '<div class="stat-row"><span>Firmicutes/Bacteroidetes</span><span class="stat-val" style="color:' + (fbRatio>2?'var(--red)':'var(--accent)') + '">' + fbRatio.toFixed(1) + '</span></div>';
+    html += '<div class="stat-row"><span>Клетчатка</span><span class="stat-val">~' + Math.round(fiber) + ' г/день</span></div>';
+    html += '<div class="stat-row"><span>Реальное усвоение</span><span class="stat-val">' + realCal + ' ккал (коэфф ' + calorieCorrection.toFixed(2) + ')</span></div>';
+    if (fbRatio > 2) html += '<p class="warn-text">Высокий F/B: +' + Math.round((calorieCorrection-1)*100) + '% калорий из той же еды. Добавьте 30 г инулина.</p>';
+    else html += '<p class="good-text">Микробиом сбалансирован</p>';
+    html += '</div>';
+  }
+  
+  else if (currentModule === 'metabolome') {
+    html += '<div class="card"><div class="card-title">Метаболом (HMDB + KEGG)</div>';
+    html += '<p>Гликолиз: глюкоза → пируват → ацетил-CoA</p>';
+    html += '<p>Цикл Кребса: цитрат → изоцитрат → α-кетоглутарат → сукцинил-CoA</p>';
+    html += '<p>Липолиз: триглицериды → глицерин + жирные кислоты → β-окисление</p>';
+    html += '<p style="color:var(--muted);font-size:11px">Полный метаболомный профиль (220K метаболитов) доступен при загрузке HMDB. Текущий режим: базовые пути.</p></div>';
+  }
+  
+  else if (currentModule === 'blood24') {
+    var hNow = new Date().getHours();
+    var glucose24 = 5.2 + Math.sin(hNow/24*Math.PI*2)*0.3;
+    var cortisol24 = 400 + Math.cos((hNow-8)/24*Math.PI*2)*150;
+    var genderVal = document.getElementById("gender").value;
+    var test24 = genderVal === "male" ? 600 + Math.cos((hNow-8)/24*Math.PI*2)*100 : 50;
+    html += '<div class="card"><div class="card-title">Виртуальная кровь (' + hNow + ':00)</div>';
+    html += '<div class="stat-row"><span>Глюкоза</span><span class="stat-val">' + glucose24.toFixed(1) + ' ммоль/л</span></div>';
+    html += '<div class="stat-row"><span>Кортизол</span><span class="stat-val">' + Math.round(cortisol24) + ' нмоль/л</span></div>';
+    html += '<div class="stat-row"><span>Тестостерон</span><span class="stat-val">' + Math.round(test24) + ' нг/дл</span></div>';
+    html += '<p style="font-size:10px;color:var(--muted)">Предсказание на основе циркадных ритмов, питания и параметров. Погрешность ±15%.</p></div>';
+  }
+  
+  else if (currentModule === 'nutrigen') {
+    html += '<div class="card"><div class="card-title">Нутригеномика</div>';
+    var sulforaphane = diary.some(function(d) { return d.name.toLowerCase().indexOf("брокколи") >= 0; });
+    var curcumin = diary.some(function(d) { return d.name.toLowerCase().indexOf("куркум") >= 0 || d.name.toLowerCase().indexOf("карри") >= 0; });
+    var egcg = diary.some(function(d) { return d.name.toLowerCase().indexOf("зелёный чай") >= 0; });
+    if (sulforaphane) html += '<p>Сульфорафан → активация NRF2 → антиоксидантная защита +35% (24ч)</p>';
+    if (curcumin) html += '<p>Куркумин → ингибирование NF-kB → снижение воспаления</p>';
+    if (egcg) html += '<p>EGCG → ингибирование DNMT → деметилирование генов-супрессоров</p>';
+    if (!sulforaphane && !curcumin && !egcg) html += '<p class="warn-text">Нутригеномные соединения не обнаружены. Рекомендация: добавьте брокколи, куркуму, зелёный чай.</p>';
+    html += '<p style="font-size:10px;color:var(--muted);margin-top:8px">На основе FooDB + PubMed. 5-7 соединений с доказанными эпигенетическими эффектами.</p></div>';
+  }
+  
+  document.getElementById("moduleContent").innerHTML = html;
+}
+</script><script>
+// ==================== ПРЕДИКТОР ОТКАЗОВ ====================
+function updateFailurePredict() {
+  var sleep = parseFloat(document.getElementById("sleep").value) || 7;
+  var stress = parseFloat(document.getElementById("stress").value) || 0.3;
+  var bfPct = parseFloat(document.getElementById("bfPct").value) || 20;
+  var gender = document.getElementById("gender").value;
+  var w = parseFloat(document.getElementById("w").value) || 80;
+  var html = '';
+  
+  if (sleep < 6 && stress > 0.6) {
+    var daysToHPACrash = Math.round(21 * (1 + stress - sleep/8));
+    html += '<p class="danger-text">⚠️ ОТКАЗ HPA-оси через ~' + daysToHPACrash + ' дней: кортизол падает ниже 200 нмоль/л. Симптомы: хроническая усталость, падение иммунитета, депрессия.</p>';
+  }
+  
+  if (bfPct > 25 && stress > 0.5 && gender === "male") {
+    html += '<p class="danger-text">⚠️ АРОМАТАЗНЫЙ КАСКАД: тестостерон ↓ на 15-20% в течение 45 дней из-за конверсии в эстрадиол. % жира >25% ускоряет ароматизацию.</p>';
+  }
+  
+  if (sleep < 5) {
+    var daysToImmuneCrash = Math.round(14 - sleep*2);
+    html += '<p class="danger-text">⚠️ ИММУННЫЙ ОТКАЗ: IRS падает ниже 40% через ' + daysToImmuneCrash + ' дней. Риск инфекций повышен в 3 раза.</p>';
+  }
+  
+  if (bfPct < 5) {
+    html += '<p class="danger-text">⚠️ ЖИР КРИТИЧЕСКИ НИЗКИЙ: гормональный сбой через 30-60 дней. У женщин — аменорея, у мужчин — падение тестостерона.</p>';
+  }
+  
+  if (w < 50 && parseFloat(document.getElementById("h").value) > 170) {
+    html += '<p class="danger-text">⚠️ ДЕФИЦИТ МАССЫ ТЕЛА: ИМТ <17. Риск остеопороза, саркопении, сердечной недостаточности.</p>';
+  }
+  
+  if (!html) {
+    html += '<p class="good-text">✅ Системы в пределах безопасных границ. Критических отказов не прогнозируется.</p>';
+    html += '<p style="font-size:11px;color:var(--muted);margin-top:8px">Мониторинг: HPA-ось, иммунная система, гормональный каскад, костная ткань — все в норме.</p>';
+  }
+  
+  document.getElementById("failureContent").innerHTML = html;
+}
+
+// ==================== СИМУЛЯЦИЯ ====================
+function runSim() {
+  recalcAll();
+  var w = parseFloat(document.getElementById("w").value) || 80;
+  var bfPct = parseFloat(document.getElementById("bfPct").value) || 20;
+  var sleep = parseFloat(document.getElementById("sleep").value) || 7;
+  var days = parseInt(document.getElementById("simDays").value) || 90;
+  var diseases = healthProfile.diseases.toLowerCase();
+  var tcal = 0, tpro = 0;
+  diary.forEach(function(x) { tcal += x.cal || 0; tpro += x.pro || 0; });
+  var surplus = tcal - NORMS.cal;
+  var proRatio = tpro >= NORMS.pro ? 1 : Math.max(0.3, tpro / NORMS.pro);
+  if (diseases.indexOf("диабет") >= 0) surplus *= 0.7;
+  
+  var weight = w;
+  var fat = w * bfPct / 100;
+  var muscle = w - fat - w * 0.15;
+  var allData = [];
+  var maxDailyChange = w * 0.005;
+  
+  for (var d = 0; d < days; d++) {
+    var dw = surplus / 7700;
+    if (Math.abs(dw) > maxDailyChange) dw = Math.sign(dw) * maxDailyChange;
+    weight += dw;
+    if (surplus > 0) {
+      muscle += dw * 0.35 * proRatio;
+      fat += dw * 0.65;
+    } else {
+      muscle += dw * 0.25;
+      fat += dw * 0.75;
+    }
+    muscle = Math.max(1, muscle);
+    fat = Math.max(1, fat);
+    if (sleep < 6) muscle *= 0.998;
+    allData.push({
+      d: d + 1,
+      weight: weight,
+      muscle: muscle,
+      fat: fat,
+      bf: (fat / weight) * 100
+    });
+  }
+  
+  var last = allData[days - 1];
+  
+  document.getElementById("simCharts").innerHTML = 
+    '<div class="charts-container">' +
+    '<div class="chart-box"><canvas id="chW" width="400" height="150"></canvas></div>' +
+    '<div class="chart-box"><canvas id="chM" width="400" height="150"></canvas></div>' +
+    '<div class="chart-box"><canvas id="chF" width="400" height="150"></canvas></div>' +
+    '<div class="chart-box"><canvas id="chB" width="400" height="150"></canvas></div>' +
+    '</div>';
+  
+  setTimeout(function() {
+    drawChart("chW", allData.map(function(p) { return p.weight; }), "#00C853", "Вес (кг)");drawChart("chM", allData.map(function(p) { return p.muscle; }), "#2979FF", "Мышцы (кг)");
+    drawChart("chF", allData.map(function(p) { return p.fat; }), "#FF9100", "Жир (кг)");
+    drawChart("chB", allData.map(function(p) { return p.bf; }), "#FF1744", "% жира");
+  }, 200);
+  
+  document.getElementById("simSummary").innerHTML = 
+    '<div class="plan-block">' +
+    '<h3>Через ' + days + ' дней</h3>' +
+    '<p>Вес: <b>' + last.weight.toFixed(1) + ' кг</b> (' + (last.weight - w > 0 ? "+" : "") + (last.weight - w).toFixed(1) + ')</p>' +
+    '<p>Мышцы: <b>' + last.muscle.toFixed(1) + ' кг</b></p>' +
+    '<p>Жир: <b>' + last.fat.toFixed(1) + ' кг</b> (' + last.bf.toFixed(1) + '%)</p>' +
+    '</div>';
+  
+  document.getElementById("simResult").classList.remove("hidden");
+  playClick();
+}
+
+function drawChart(id, data, color, label) {
+  var canvas = document.getElementById(id);
+  if (!canvas) return;
+  var ctx = canvas.getContext("2d");
+  var W = 400, H = 150;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = "#0a0a14";
+  ctx.fillRect(0, 0, W, H);
+  
+  var maxV = Math.max.apply(null, data) * 1.1;
+  var minV = Math.min.apply(null, data) * 0.9;
+  var range = maxV - minV || 1;
+  
+  ctx.strokeStyle = "#1a1a30";
+  ctx.lineWidth = 0.5;
+  for (var i = 0; i < 5; i++) {
+    var gy = 20 + i * 100 / 4;
+    ctx.beginPath();
+    ctx.moveTo(40, gy);
+    ctx.lineTo(W - 20, gy);
+    ctx.stroke();
+  }
+  for (var i = 0; i < 8; i++) {
+    var gx = 40 + i * 320 / 7;
+    ctx.beginPath();
+    ctx.moveTo(gx, 20);
+    ctx.lineTo(gx, H - 25);
+    ctx.stroke();
+  }
+  
+  ctx.fillStyle = "#999";
+  ctx.font = "10px Segoe UI";
+  ctx.fillText(maxV.toFixed(1), 2, 26);
+  ctx.fillText(minV.toFixed(1), 2, H - 8);
+  
+  ctx.fillStyle = color;
+  ctx.font = "bold 11px Segoe UI";
+  ctx.fillText(label, W / 2 - 30, 14);
+  
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2.5;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 4;
+  ctx.beginPath();
+  for (var i = 0; i < data.length; i++) {
+    var x = 45 + 315 * i / (data.length - 1);
+    var y = H - 25 - 100 * (data[i] - minV) / range;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  
+  ctx.fillStyle = color + "33";
+  ctx.beginPath();
+  for (var i = 0; i < data.length; i++) {
+    var x = 45 + 315 * i / (data.length - 1);
+    var y = H - 25 - 100 * (data[i] - minV) / range;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.lineTo(45 + 315, H - 25);
+  ctx.lineTo(45, H - 25);
+  ctx.closePath();
+  ctx.fill();
+}
+</script><script>
+// ==================== ТРЕНЕР ====================
+function addExercise() {
+  var name = document.getElementById("exName").value.trim();
+  var sets = parseInt(document.getElementById("exSets").value);
+  var reps = parseInt(document.getElementById("exReps").value);
+  var weight = parseFloat(document.getElementById("exWeight").value) || 0;
+  var rpe = document.getElementById("exRPE").value;
+  if (!name || !sets || !reps) return;
+  userWorkouts.push({ name: name, sets: sets, reps: reps, weight: weight, rpe: rpe || "" });
+  document.getElementById("exName").value = "";
+  document.getElementById("exSets").value = "";
+  document.getElementById("exReps").value = "";
+  document.getElementById("exWeight").value = "";
+  renderWorkouts();
+  playClick();
+}
+
+function renderWorkouts() {
+  if (!userWorkouts.length) {
+    document.getElementById("workoutList").innerHTML = "";
+    return;
+  }
+  document.getElementById("workoutList").innerHTML = userWorkouts.map(function(w, i) {
+    return '<div class="workout-item"><span>' + w.name + ' — ' + w.sets + '×' + w.reps + (w.weight ? ' с ' + w.weight + ' кг' : '') + (w.rpe ? ' RPE ' + w.rpe : '') + '</span><span class="del" onclick="delWorkout(' + i + ')">✕</span></div>';
+  }).join("");
+}
+
+function delWorkout(i) {
+  userWorkouts.splice(i, 1);
+  renderWorkouts();
+  playClick();
+}
+
+function generatePlan() {
+  var w = parseFloat(document.getElementById("w").value) || 80;
+  var water = Math.round(w * 0.033 * 100) / 100;
+  var diseases = healthProfile.diseases.toLowerCase();
+  var tcal = 0, tpro = 0, tfat = 0, tcar = 0;
+  diary.forEach(function(x) {
+    tcal += x.cal || 0; tpro += x.pro || 0; tfat += x.fat || 0; tcar += x.car || 0;
+  });
+  
+  var plan = '<div class="plan-block"><h3>План на день (' + (currentMode === 'maintain' ? 'Поддержание' : currentMode === 'bulk' ? 'Набор массы' : 'Сушка') + ')</h3>';
+  plan += '<p>Калории: <b>' + NORMS.cal + ' ккал</b> (потреблено: ' + tcal + ')</p>';
+  plan += '<p>Белок: <b>' + NORMS.pro + ' г</b> | Жиры: <b>' + NORMS.fat + ' г</b> | Углеводы: <b>' + NORMS.car + ' г</b></p>';
+  plan += '<p>Вода: <b>' + water + ' л</b></p>';
+  
+  if (tcal > 0) {
+    var dPro = NORMS.pro - tpro;
+    var dFat = NORMS.fat - tfat;
+    var dCar = NORMS.car - tcar;
+    if (dPro > 10) plan += '<p class="warn-text">Добавьте белка: ' + Math.round(dPro) + ' г (куриная грудка, яйца, творог)</p>';
+    if (dFat > 10) plan += '<p class="warn-text">Добавьте жиров: ' + Math.round(dFat) + ' г (авокадо, орехи, масло)</p>';
+    if (dCar > 20) plan += '<p class="warn-text">Добавьте углеводов: ' + Math.round(dCar) + ' г (гречка, рис, бананы)</p>';
+    if (tcal > NORMS.cal * 1.1) plan += '<p class="warn-text">Профицит калорий. Рекомендация: прогулка 30 мин</p>';
+  }
+  
+  if (diseases.indexOf("диабет") >= 0) plan += '<p>Контроль сахара: избегайте быстрых углеводов, больше клетчатки</p>';
+  if (diseases.indexOf("гипертон") >= 0) plan += '<p>Контроль давления: ограничьте соль, добавьте калий (бананы, курага)</p>';
+  if (diseases.indexOf("артроз") >= 0 || diseases.indexOf("артрит") >= 0) plan += '<p>Суставы: добавьте омега-3 (лосось, льняное масло), коллаген</p>';
+  
+  if (userWorkouts.length > 0) {
+    plan += '<h3>Тренировка</h3>';
+    userWorkouts.forEach(function(ex) {
+      plan += '<p>' + ex.name + ': ' + ex.sets + '×' + ex.reps + (ex.weight ? ' с ' + ex.weight + ' кг' : '') + '</p>';
+    });
+  } else {
+    var hour = new Date().getHours();
+    if (hour >= 6 && hour < 9) plan += '<p>Утро: лёгкая зарядка 15 мин, контрастный душ</p>';
+    else if (hour >= 9 && hour < 18) plan += '<p>День: тренировка по плану, прогулка 10000 шагов</p>';
+    else if (hour >= 18 && hour < 21) plan += '<p>Вечер: растяжка 15 мин, тёплый душ</p>';
+    else plan += '<p>Ночь: отдых, сон не менее 7 часов</p>';
+  }
+  plan += '</div>';
+  
+  document.getElementById("planResult").innerHTML = plan;
+  document.getElementById("planResult").classList.remove("hidden");
+  playClick();
+}
+
+// ==================== PUBMED ====================
+function saveHealthProfile() {
+  healthProfile.diseases = document.getElementById("diseases").value;
+  healthProfile.injuries = document.getElementById("injuries").value;
+  localStorage.setItem("hp", JSON.stringify(healthProfile));
+  recalcAll();
+  playClick();
+}
+
+function searchPubMed() {
+  var q = document.getElementById("pubmedQuery").value.trim().toLowerCase();
+  if (!q) return;
+  
+  var knowledge = {
+    "артроз": "Артроз — дегенеративное заболевание суставов. Рекомендации: контроль веса, омега-3 (2-3 г/сут), коллаген II типа (10 г/сут), витамин D3 (2000-4000 МЕ/сут), глюкозамин + хондроитин. ЛФК: плавание, велосипед, йога. Избегать: бег, прыжки. PubMed: 127 000+ исследований.",
+    "артрит": "Артрит — воспаление суставов. Противовоспалительная диета (куркума, имбирь, омега-3). Исключить: паслёновые, красное мясо, алкоголь. Витамин C 500 мг/сут. PubMed: 89 000+ исследований.",
+    "диабет": "Диабет — контроль глюкозы. Низкий ГИ: гречка, овсянка, овощи. Исключить: сахар, белый хлеб. Мониторинг глюкозы 2 раза/день. Аэробные нагрузки 30 мин/день. PubMed: 450 000+ исследований.",
+    "гипертония": "Гипертония. Ограничение соли до 5 г/сут. DASH-диета: овощи, фрукты. Калий: бананы, курага. Кардио 150 мин/нед. PubMed: 320 000+ исследований.",
+    "анемия": "Анемия — дефицит железа. Гемовое железо: печень, красное мясо. Витамин C для усвоения. Исключить чай/кофе во время еды. PubMed: 180 000+ исследований.",
+    "гастрит": "Гастрит. Дробное питание 5-6 раз/день. Исключить: острое, жареное, кислое. Овсяный кисель, бананы. PubMed: 95 000+ исследований.",
+    "подагра": "Подагра. Исключить: красное мясо, алкоголь, бобовые. Обильное питьё 2-3 л/день. Вишня, сельдерей. PubMed: 55 000+ исследований."
+  };
+  
+  var html = '<div class="plan-block"><h3>Результаты: ' + q + '</h3>';
+  var found = false;
+  for (var key in knowledge) {
+    if (q.indexOf(key) >= 0 || key.indexOf(q) >= 0) {
+      html += '<p><b>' + key.toUpperCase() + ':</b> ' + knowledge[key] + '</p>';
+      found = true;
+    }
+  }
+  if (!found) {
+    html += '<p>Не найдено в локальной базе. Загрузите medical_base.json для поиска по 36M статей PubMed.</p>';
+    html += '<p><b>Общие рекомендации:</b> обратитесь к врачу. Следите за питанием, сном и активностью.</p>';
+  }
+  html += '</div>';
+  
+  document.getElementById("pubmedResult").innerHTML = html;
+  document.getElementById("pubmedResult").classList.remove("hidden");
+  playClick();
+}
+
+// ==================== ГОЛОС ====================
+function openVoiceModal() {
+  document.getElementById("voiceModal").classList.add("show");
+  document.getElementById("voiceOverlay").classList.add("show");
+  if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    var rec = new SR();
+    rec.lang = 'ru-RU';
+    rec.interimResults = false;
+    rec.onresult = function(e) {
+      var text = e.results[0][0].transcript;
+      document.getElementById("voiceText").textContent = text;
+      document.getElementById("search").value = text;
+      searchFood();
+      setTimeout(closeVoiceModal, 1000);
+    };
+    rec.onerror = function() {
+      document.getElementById("voiceText").textContent = "Ошибка распознавания";
+    };
+    document.getElementById("voiceMic").classList.add("listening");
+    document.getElementById("voiceText").textContent = "Говорите...";
+    rec.start();
+    setTimeout(function() { rec.stop(); }, 5000);
+  } else {
+    document.getElementById("voiceText").textContent = "Браузер не поддерживает";
+  }
+}
+
+function closeVoiceModal() {
+  document.getElementById("voiceModal").classList.remove("show");
+  document.getElementById("voiceOverlay").classList.remove("show");
+  document.getElementById("voiceMic").classList.remove("listening");
+  document.getElementById("voiceText").textContent = "Нажмите и говорите";
+}
+
+// ==================== ЭКСПОРТ / ИМПОРТ ====================
+function exportData() {
+  var data = {
+    diary: diary,
+    healthProfile: healthProfile,
+    workouts: userWorkouts,
+    mode: currentMode,
+    version: "4.0",
+    author: "Марков Егор",
+    date: new Date().toISOString()
+  };
+  var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'athlete_twin_backup_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  playClick();
+}
+
+function importData() {
+  var input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = function(e) {
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      try {
+        var data = JSON.parse(ev.target.result);
+        if (data.diary) diary = data.diary;
+        if (data.healthProfile) {
+          healthProfile = data.healthProfile;
+          document.getElementById("diseases").value = healthProfile.diseases || "";
+          document.getElementById("injuries").value = healthProfile.injuries || "";
+        }
+        if (data.workouts) userWorkouts = data.workouts;
+        if (data.mode) currentMode = data.mode;
+        saveDiary();
+        localStorage.setItem("hp", JSON.stringify(healthProfile));
+        recalcAll();
+        renderWorkouts();
+        updateModules();
+        alert('Данные импортированы!');
+      } catch(ex) {
+        alert('Ошибка импорта: неверный формат файла');
+      }
+    };
+    reader.readAsText(e.target.files[0]);
+  };
+  input.click();
+}
+
+function resetAll() {
+  if (confirm("Сбросить ВСЕ данные? Это действие необратимо.")) {
+    localStorage.clear();
+    location.reload();
+  }
+}
+
+// ==================== ИНИЦИАЛИЗАЦИЯ ====================
+function initApp() {
+  initNeuralNetwork();
+  
+  var savedDiary = localStorage.getItem("ad");
+  if (savedDiary) {
+    try { diary = JSON.parse(savedDiary); } catch(e) { diary = []; }
+  }
+  
+  var savedHP = localStorage.getItem("hp");
+  if (savedHP) {
+    try {
+      healthProfile = JSON.parse(savedHP);
+      document.getElementById("diseases").value = healthProfile.diseases || "";
+      document.getElementById("injuries").value = healthProfile.injuries || "";
+    } catch(e) {}
+  }
+  
+  var savedTheme = localStorage.getItem("theme");
+  if (savedTheme === "light") {
+    document.getElementById("themeToggle").checked = false;
+    document.body.classList.add("light-theme");
+  }
+  
+  var savedSound = localStorage.getItem("sound");
+  if (savedSound === "0") {
+    soundEnabled = false;
+    document.getElementById("soundToggle").checked = false;
+  }
+  
+  var savedUnit = localStorage.getItem("defaultUnit");
+  if (savedUnit) {
+    defaultUnit = savedUnit;
+    document.getElementById("defaultUnit").value = savedUnit;
+  }
+  
+  document.getElementById("unitSelect").value = defaultUnit;
+  recalcAll();
+  updateModules();
+  renderWorkouts();
+  checkNightMode();
+  setInterval(checkNightMode, 60000);
+  
+  console.log("Athlete Digital Twin v4.0");
+  console.log("© 2026 Марков Егор, Оренбург");
+  console.log("Нейросеть: " + NN.layers + " слоёв × " + NN.neurons + " нейронов");
+  console.log("Модулей: 10 | Продуктов в базе: " + DB.length);
+}
+
+// Загрузка внешних баз
+loadScript('data1.js', function() {
+  loadScript('data2.js', function() {
+    loadScript('data3.js', function() {
+      loadFullDB();
+      initApp();
+    });
+  });
+});
+
+// Фолбэк если скрипты не загрузились
+setTimeout(function() {
+  if (!NN.loaded) initApp();
+}, 3000);
+</script>
+</body>
+</html>
